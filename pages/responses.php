@@ -1,5 +1,5 @@
-<?php
-// pages/responses.php – Survey Responses viewer
+﻿<?php
+// pages/responses.php â€“ Survey Responses viewer
 // ByteBandits QA Management System
 require_once __DIR__ . '/../config/database.php';
 $page_title = 'Survey Responses';
@@ -116,7 +116,7 @@ require_once __DIR__ . '/../includes/header.php';
         ?>
         <div class="stat-card">
             <div class="stat-icon amber"><i class="bi bi-star-half"></i></div>
-            <div><div class="stat-value"><?= $avg_q ? number_format($avg_q,2) : '—' ?></div><div class="stat-label">Avg Rating</div></div>
+            <div><div class="stat-value"><?= $avg_q ? number_format($avg_q,2) : 'â€”' ?></div><div class="stat-label">Avg Rating</div></div>
         </div>
     </div>
     <div class="col-sm-4">
@@ -133,8 +133,8 @@ require_once __DIR__ . '/../includes/header.php';
 <!-- Respondent Segmentation -->
 <div class="qa-card mb-4">
     <div class="qa-card-title">Respondent Segmentation</div>
-    <div class="qa-table-wrapper" style="border:none;margin-top:12px">
-        <table class="qa-table">
+    <div class="qa-table-wrapper table-responsive" style="border:none;margin-top:12px">
+        <table class="table qa-table table-sm align-middle">
             <thead>
                 <tr>
                     <th>Role</th>
@@ -162,7 +162,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php if (!empty($seg['avg_rating'])): ?>
                         <span class="fw-600" style="color:var(--warning)"><i class="bi bi-star-fill"></i> <?= number_format((float)$seg['avg_rating'], 2) ?></span>
                         <?php else: ?>
-                        <span class="text-muted-qa">—</span>
+                        <span class="text-muted-qa">â€”</span>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -175,8 +175,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Response Table -->
 <div class="qa-card p-0">
-    <div class="qa-table-wrapper" style="border:none;border-radius:var(--radius)">
-        <table class="qa-table">
+    <div class="qa-table-wrapper table-responsive" style="border:none;border-radius:var(--radius)">
+        <table class="table qa-table table-sm align-middle">
             <thead>
                 <tr>
                     <th>#</th>
@@ -203,14 +203,14 @@ require_once __DIR__ . '/../includes/header.php';
                     <td>
                         <?php if($res['respondent_role']): ?>
                         <span class="badge-status badge-pending"><?= htmlspecialchars($res['respondent_role']) ?></span>
-                        <?php else: echo '<span class="text-muted-qa">—</span>'; endif; ?>
+                        <?php else: echo '<span class="text-muted-qa">â€”</span>'; endif; ?>
                     </td>
                     <td>
                         <?php if($res['avg_rating']): ?>
                         <span class="fw-600" style="color:var(--warning)">
                             <i class="bi bi-star-fill"></i> <?= number_format($res['avg_rating'],1) ?>
                         </span>
-                        <?php else: echo '<span class="text-muted-qa">—</span>'; endif; ?>
+                        <?php else: echo '<span class="text-muted-qa">â€”</span>'; endif; ?>
                     </td>
                     <td class="mono"><?= $res['answer_count'] ?></td>
                     <td class="text-muted-qa mono" style="font-size:0.8rem"><?= date('M d, Y H:i',strtotime($res['submitted_at'])) ?></td>
@@ -229,7 +229,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>–<?= min($offset+$per_page,$total) ?> of <?= $total ?> responses</span>
+    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>â€“<?= min($offset+$per_page,$total) ?> of <?= $total ?> responses</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -241,7 +241,7 @@ require_once __DIR__ . '/../includes/header.php';
         <h5 class="modal-title">Response Detail</h5>
         <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="responseDetailBody">Loading…</div>
+      <div class="modal-body" id="responseDetailBody">Loadingâ€¦</div>
     </div>
   </div>
 </div>
@@ -262,8 +262,8 @@ function viewResponse(responseId){
         let html = `<div class="mb-3 p-3" style="background:var(--bg-hover);border-radius:var(--radius-sm)">
             <div class="row g-2">
                 <div class="col-md-6"><span class="text-muted-qa">Respondent: </span><b>${d.respondent_name||"Anonymous"}</b></div>
-                <div class="col-md-6"><span class="text-muted-qa">Role: </span><b>${d.respondent_role||"—"}</b></div>
-                <div class="col-md-6"><span class="text-muted-qa">Email: </span>${d.respondent_email||"—"}</div>
+                <div class="col-md-6"><span class="text-muted-qa">Role: </span><b>${d.respondent_role||"â€”"}</b></div>
+                <div class="col-md-6"><span class="text-muted-qa">Email: </span>${d.respondent_email||"â€”"}</div>
                 <div class="col-md-6"><span class="text-muted-qa">Submitted: </span>${d.submitted_at}</div>
             </div>
         </div>`;
@@ -271,10 +271,10 @@ function viewResponse(responseId){
             d.answers.forEach(function(a,i){
                 let ansHtml = "";
                 if(a.question_type==="rating" && a.rating){
-                    const stars = "★".repeat(a.rating) + "☆".repeat(5-a.rating);
+                    const stars = "â˜…".repeat(a.rating) + "â˜†".repeat(5-a.rating);
                     ansHtml = `<span style="color:var(--warning);font-size:1.1rem">${stars}</span> <span class="text-muted-qa">(${a.rating}/5)</span>`;
                 } else {
-                    ansHtml = `<span style="color:var(--text-primary)">${a.answer_text||"—"}</span>`;
+                    ansHtml = `<span style="color:var(--text-primary)">${a.answer_text||"â€”"}</span>`;
                 }
                 html += `<div class="mb-2 p-3" style="border:1px solid var(--border);border-radius:var(--radius-sm)">
                     <div class="fw-600 mb-1">${i+1}. ${a.question_text}</div>
@@ -290,3 +290,5 @@ function viewResponse(responseId){
 </script>';
 require_once __DIR__ . '/../includes/footer.php';
 ?>
+
+

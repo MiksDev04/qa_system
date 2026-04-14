@@ -16,6 +16,7 @@
     --bg-surface:    #141720;
     --bg-card:       #1a1e2e;
     --bg-hover:      #20263a;
+    --bg-secondary:  #171b29;
     --bg-input:      #111420;
     --border:        #2a2f45;
     --border-light:  #1f2438;
@@ -44,6 +45,7 @@
     --bg-surface:    #ffffff;
     --bg-card:       #ffffff;
     --bg-hover:      #f5f7ff;
+    --bg-secondary:  #f1f4fb;
     --bg-input:      #f8f9ff;
     --border:        #dde1f0;
     --border-light:  #eaecf5;
@@ -275,6 +277,28 @@ body {
     background: var(--bg-base);
 }
 
+.dashboard-section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.dashboard-section-head h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.dashboard-section-head p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
 /* ─── Cards ─────────────────────────────────────────── */
 .qa-card {
     background: var(--bg-card);
@@ -300,7 +324,7 @@ body {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 20px 24px;
+    padding: 20px 22px;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -308,6 +332,28 @@ body {
 }
 
 .stat-card:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow); }
+
+.stat-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+
+.stat-card-link:hover {
+    text-decoration: none;
+    color: inherit;
+}
+
+.stat-card-clickable {
+    cursor: pointer;
+    height: 100%;
+}
+
+.stat-card-critical {
+    border-color: rgba(220, 38, 38, 0.45);
+    box-shadow: 0 0 0 1px var(--danger-bg);
+}
 
 .stat-icon {
     width: 48px; height: 48px;
@@ -325,29 +371,147 @@ body {
 .stat-icon.cyan  { background: var(--info-bg);     color: var(--info); }
 
 .stat-value {
-    font-size: 1.75rem;
+    font-size: 1.9rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1;
 }
 
 .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text-secondary);
     margin-top: 4px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.stat-inline-alert {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    color: var(--danger);
+    font-weight: 600;
 }
 
 /* ─── Tables ─────────────────────────────────────────── */
 .qa-table-wrapper {
     border-radius: var(--radius);
     border: 1px solid var(--border);
-    overflow: hidden;
+    background: var(--bg-card);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 .qa-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+/* Override Bootstrap table variables so dark mode tables never render white. */
+.qa-table.table {
+    --bs-table-bg: var(--bg-card);
+    --bs-table-color: var(--text-primary);
+    --bs-table-border-color: var(--border-light);
+    --bs-table-accent-bg: var(--bg-card);
+    --bs-table-striped-bg: var(--bg-hover);
+    --bs-table-striped-color: var(--text-primary);
+    --bs-table-hover-bg: var(--bg-hover);
+    --bs-table-hover-color: var(--text-primary);
+    margin-bottom: 0;
+}
+
+.qa-table.table > :not(caption) > * > * {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-bottom-color: var(--border-light);
+    box-shadow: none;
+}
+
+/* Hard enforce dark table surfaces to avoid Bootstrap utility conflicts. */
+[data-theme="dark"] .qa-table-wrapper,
+[data-theme="dark"] .qa-table,
+[data-theme="dark"] .qa-table.table {
+    background-color: var(--bg-card) !important;
+}
+
+[data-theme="dark"] .qa-table.table {
+    --bs-table-bg: var(--bg-card) !important;
+    --bs-table-color: var(--text-primary) !important;
+    --bs-table-border-color: var(--border-light) !important;
+    --bs-table-accent-bg: var(--bg-card) !important;
+    --bs-table-hover-bg: var(--bg-hover) !important;
+    --bs-table-hover-color: var(--text-primary) !important;
+    --bs-table-striped-bg: var(--bg-hover) !important;
+    --bs-table-striped-color: var(--text-primary) !important;
+}
+
+/* Ensure any Bootstrap .table in dark mode uses QA dark palette. */
+[data-theme="dark"] .table {
+    --bs-table-bg: var(--bg-card) !important;
+    --bs-table-color: var(--text-primary) !important;
+    --bs-table-border-color: var(--border-light) !important;
+    --bs-table-accent-bg: var(--bg-card) !important;
+    --bs-table-hover-bg: var(--bg-hover) !important;
+    --bs-table-hover-color: var(--text-primary) !important;
+    --bs-table-striped-bg: var(--bg-hover) !important;
+    --bs-table-striped-color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .qa-table.table > :not(caption) > * > * {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-light) !important;
+    box-shadow: inset 0 0 0 9999px transparent !important;
+}
+
+[data-theme="dark"] .table > :not(caption) > * > * {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-light) !important;
+    box-shadow: inset 0 0 0 9999px transparent !important;
+}
+
+[data-theme="dark"] .qa-table tbody td {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Force tbody surfaces dark across all tables in dark mode. */
+[data-theme="dark"] .qa-table tbody,
+[data-theme="dark"] .qa-table tbody tr,
+[data-theme="dark"] .table tbody,
+[data-theme="dark"] .table tbody tr,
+[data-theme="dark"] .table tbody th,
+[data-theme="dark"] .table tbody td {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-light) !important;
+}
+
+[data-theme="dark"] .table tbody tr:hover > *,
+[data-theme="dark"] .qa-table tbody tr:hover > * {
+    background-color: var(--bg-hover) !important;
+}
+
+[data-theme="dark"] .page-content table tbody,
+[data-theme="dark"] .page-content table tbody tr,
+[data-theme="dark"] .page-content table tbody th,
+[data-theme="dark"] .page-content table tbody td {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-light) !important;
+}
+
+[data-theme="dark"] .qa-table thead th {
+    background-color: var(--bg-hover) !important;
+    color: var(--text-muted) !important;
 }
 
 .qa-table thead th {
@@ -365,10 +529,34 @@ body {
 }
 
 .qa-table tbody td {
-    padding: 13px 16px;
+    padding: 16px 16px;
     border-bottom: 1px solid var(--border-light);
     color: var(--text-primary);
     vertical-align: middle;
+}
+
+.qa-table-title {
+    font-size: 0.88rem;
+}
+
+.qa-table-subtle {
+    font-size: 0.85rem;
+}
+
+.badge-compact {
+    font-size: 0.7rem;
+    padding: 2px 9px;
+}
+
+.table-status-icon {
+    font-size: 0.8rem;
+    margin-left: 4px;
+}
+
+.table-empty-cell {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-secondary);
 }
 
 .qa-table tbody tr:last-child td { border-bottom: none; }
@@ -474,6 +662,43 @@ textarea.qa-form-control { resize: vertical; min-height: 80px; }
 
 .btn-qa-sm { padding: 5px 12px; font-size: 0.78rem; }
 .btn-qa-icon { padding: 7px; border-radius: var(--radius-sm); }
+.btn-qa-compact-icon { font-size: 0.8rem; }
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.qa-quick-action {
+    padding: 14px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    text-decoration: none;
+    text-align: center;
+    transition: all var(--transition);
+}
+
+.qa-quick-action:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.qa-quick-action-icon {
+    font-size: 1.35rem;
+    margin-bottom: 8px;
+}
+
+.qa-quick-action-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
 
 /* ─── Modals ─────────────────────────────────────────── */
 .modal-content {
@@ -627,15 +852,30 @@ textarea.qa-form-control { resize: vertical; min-height: 80px; }
     .page-content {
         padding: 20px 16px 40px;
     }
+    .dashboard-section-head h3 {
+        font-size: 0.95rem;
+    }
+    .quick-actions-grid {
+        grid-template-columns: 1fr 1fr;
+    }
     .filter-bar {
         gap: 8px;
+    }
+}
+
+@media (max-width: 560px) {
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    .qa-table {
+        font-size: 0.82rem;
     }
 }
 
 /* ─── Chart wrapper ──────────────────────────────────── */
 .chart-wrapper {
     position: relative;
-    height: 260px;
+    height: clamp(230px, 31vh, 320px);
 }
 
 /* ─── Code / mono ────────────────────────────────────── */

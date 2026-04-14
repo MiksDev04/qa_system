@@ -25,9 +25,13 @@ function updateThemeUI(theme) {
 
 // Restore theme on load
 (function() {
-    const saved = localStorage.getItem('qa_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', saved);
-    updateThemeUI(saved);
+    const saved = localStorage.getItem('qa_theme');
+    const theme = (saved === 'light' || saved === 'dark') ? saved : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    if (saved !== theme) {
+        localStorage.setItem('qa_theme', theme);
+    }
+    updateThemeUI(theme);
 })();
 
 // ─── Sidebar ──────────────────────────────────────────

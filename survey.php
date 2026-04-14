@@ -3,6 +3,10 @@
 // ByteBandits QA Management System
 require_once __DIR__ . '/config/database.php';
 
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
 $token = trim($_GET['token'] ?? '');
 $conn  = getConnection();
 $error = '';
@@ -11,6 +15,13 @@ $questions = [];
 $submitted = false;
 $all_roles = ['Student', 'Employee', 'Employer', 'Alumni', 'General'];
 $allowed_roles = [];
+
+if (!isset($_SESSION['survey_submitted'])) {
+    $_SESSION['survey_submitted'] = [];
+}
+if (!isset($_SESSION['survey_form_nonce'])) {
+    $_SESSION['survey_form_nonce'] = [];
+}
 
 if (!$token) { $error = 'Invalid survey link. No token provided.'; }
 else {
@@ -41,14 +52,29 @@ if ($survey) {
     } else {
         $allowed_roles = in_array($audience, $all_roles, true) ? [$audience] : ['General'];
     }
+
+    if (!empty($_SESSION['survey_submitted'][$token])) {
+        $submitted = true;
+    }
+
+    if (!$submitted && empty($_SESSION['survey_form_nonce'][$token])) {
+        $_SESSION['survey_form_nonce'][$token] = bin2hex(random_bytes(16));
+    }
 }
 
 // Handle submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $survey && !$error) {
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if ($requestMethod === 'POST' && $survey && !$error && !$submitted) {
     $name   = trim($_POST['respondent_name'] ?? '');
     $email  = trim($_POST['respondent_email'] ?? '');
     $role   = trim($_POST['respondent_role'] ?? ($allowed_roles[0] ?? $survey['target_audience']));
     $sess   = bin2hex(random_bytes(16));
+    $form_nonce = trim($_POST['form_nonce'] ?? '');
+    $session_nonce = (string)($_SESSION['survey_form_nonce'][$token] ?? '');
+
+    if ($session_nonce === '' || !hash_equals($session_nonce, $form_nonce)) {
+        $error = 'This survey response was already submitted. Please open a fresh survey link to submit again.';
+    }
 
     if (!in_array($role, $allowed_roles, true)) {
         $error = 'Selected role is not allowed for this survey.';
@@ -86,7 +112,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $survey && !$error) {
                 $a_stmt->execute();
             }
             $conn->commit();
-            $submitted = true;
+            $_SESSION['survey_submitted'][$token] = true;
+            unset($_SESSION['survey_form_nonce'][$token]);
+
+            header('Location: /qa_system/survey.php?token=' . urlencode($token) . '&submitted=1');
+            exit;
         } catch(Exception $e) {
             $conn->rollback();
             $error = 'Submission failed. Please try again.';
@@ -105,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $survey && !$error) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap">
-    <link rel="stylesheet" href="/qa_system/assets/css/main.css">
+    <link rel="stylesheet" href="/qa_system/assets/css/main.css?v=<?= filemtime(__DIR__ . '/assets/css/main.css') ?>">
     <style>
         body { padding: 0; }
         .survey-public-wrapper { padding: 40px 16px 60px; }
@@ -157,6 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $survey && !$error) {
         <?php endif; ?>
 
         <form method="POST" id="surveyForm">
+    <input type="hidden" name="form_nonce" value="<?= htmlspecialchars((string)($_SESSION['survey_form_nonce'][$token] ?? '')) ?>">
 
         <!-- Respondent info -->
         <div class="qa-card mb-4" style="padding:18px">
@@ -254,6 +285,17 @@ function setRating(qid, val) {
     document.getElementById('ratingVal_'+qid).value = val;
     const btns = document.querySelectorAll('#stars_'+qid+' button');
     btns.forEach((b,i) => { b.classList.toggle('active', i < val); });
+}
+
+const surveyForm = document.getElementById('surveyForm');
+if (surveyForm) {
+    surveyForm.addEventListener('submit', function () {
+        const submitButton = surveyForm.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting...';
+        }
+    });
 }
 </script>
 </body>

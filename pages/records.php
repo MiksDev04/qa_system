@@ -1,5 +1,5 @@
-<?php
-// pages/records.php – QA Records CRUD
+﻿<?php
+// pages/records.php â€“ QA Records CRUD
 // ByteBandits QA Management System
 require_once __DIR__ . '/../config/database.php';
 $page_title = 'QA Records';
@@ -94,8 +94,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Table -->
 <div class="qa-card p-0">
-    <div class="qa-table-wrapper" style="border:none;border-radius:var(--radius)">
-        <table class="qa-table">
+    <div class="qa-table-wrapper table-responsive" style="border:none;border-radius:var(--radius)">
+        <table class="table qa-table table-sm align-middle">
             <thead>
                 <tr>
                     <th>#</th>
@@ -139,10 +139,10 @@ require_once __DIR__ . '/../includes/header.php';
                     </td>
                     <td>
                         <span class="badge-status <?= $met ? 'badge-active':'badge-closed' ?>">
-                            <?= $met ? '✓ Met':'✗ Below' ?>
+                            <?= $met ? 'âœ“ Met':'âœ— Below' ?>
                         </span>
                     </td>
-                    <td class="text-muted-qa"><?= htmlspecialchars($rec['recorded_by'] ?? '—') ?></td>
+                    <td class="text-muted-qa"><?= htmlspecialchars($rec['recorded_by'] ?? 'â€”') ?></td>
                     <td>
                         <div class="d-flex gap-1">
                             <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon"
@@ -165,7 +165,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>–<?= min($offset+$per_page,$total) ?> of <?= $total ?> records</span>
+    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>â€“<?= min($offset+$per_page,$total) ?> of <?= $total ?> records</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -183,7 +183,7 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="col-md-6">
                 <label class="qa-form-label">Indicator *</label>
                 <select id="rec_indicator" class="qa-form-control">
-                    <option value="">Select indicator…</option>
+                    <option value="">Select indicatorâ€¦</option>
                     <?php foreach($ind_opts as $i): ?>
                     <option value="<?= $i['indicator_id'] ?>"><?= htmlspecialchars($i['name']) ?></option>
                     <?php endforeach; ?>
@@ -211,7 +211,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
             <div class="col-12">
                 <label class="qa-form-label">Remarks</label>
-                <textarea id="rec_remarks" class="qa-form-control" rows="3" placeholder="Notes or observations…"></textarea>
+                <textarea id="rec_remarks" class="qa-form-control" rows="3" placeholder="Notes or observationsâ€¦"></textarea>
             </div>
         </div>
       </div>
@@ -327,12 +327,12 @@ function viewRecord(data){
     const varianceText = (variance >= 0 ? "+" : "") + variance.toFixed(2);
     const varianceHTML = met ? `<span style="color: var(--success)">${varianceText}</span>` : `<span style="color: var(--danger)">${varianceText}</span>`;
     $("#view_rec_variance").html(varianceHTML);
-    const statusBadge = met ? `<span class="badge-status badge-active">✓ Met Target</span>` : `<span class="badge-status badge-closed">✗ Below Target</span>`;
+    const statusBadge = met ? `<span class="badge-status badge-active">âœ“ Met Target</span>` : `<span class="badge-status badge-closed">âœ— Below Target</span>`;
     $("#view_rec_status").html(statusBadge);
-    $("#view_rec_by").text(data.recorded_by || "—");
+    $("#view_rec_by").text(data.recorded_by || "â€”");
     const dateStr = new Date(data.created_at).toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"});
     $("#view_rec_date").text(dateStr);
-    $("#view_rec_remarks").text(data.remarks || "—");
+    $("#view_rec_remarks").text(data.remarks || "â€”");
     new bootstrap.Modal(document.getElementById("viewRecModal")).show();
 }
 
@@ -359,3 +359,5 @@ function deleteRecord(id){
 </script>';
 require_once __DIR__ . '/../includes/footer.php';
 ?>
+
+

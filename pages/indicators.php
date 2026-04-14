@@ -1,5 +1,5 @@
-<?php
-// pages/indicators.php – QA Indicators CRUD
+﻿<?php
+// pages/indicators.php â€“ QA Indicators CRUD
 // ByteBandits QA Management System
 require_once __DIR__ . '/../config/database.php';
 $page_title = 'KPI Indicators';
@@ -58,7 +58,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="filter-bar">
     <div style="flex:1;min-width:200px">
         <label class="qa-form-label">Search</label>
-        <input type="text" id="f-search" class="qa-form-control" placeholder="Search indicators…" value="<?= htmlspecialchars($search) ?>">
+        <input type="text" id="f-search" class="qa-form-control" placeholder="Search indicatorsâ€¦" value="<?= htmlspecialchars($search) ?>">
     </div>
     <div style="min-width:150px">
         <label class="qa-form-label">Category</label>
@@ -85,8 +85,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Table -->
 <div class="qa-card p-0">
-    <div class="qa-table-wrapper" style="border:none;border-radius:var(--radius)">
-        <table class="qa-table">
+    <div class="qa-table-wrapper table-responsive" style="border:none;border-radius:var(--radius)">
+        <table class="table qa-table table-sm align-middle">
             <thead>
                 <tr>
                     <th>#</th>
@@ -108,7 +108,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <td>
                         <div class="fw-600"><?= htmlspecialchars($ind['name']) ?></div>
                         <?php if ($ind['description']): ?>
-                        <div class="text-muted-qa" style="font-size:0.78rem;margin-top:2px"><?= htmlspecialchars(substr($ind['description'], 0, 80)) ?>…</div>
+                        <div class="text-muted-qa" style="font-size:0.78rem;margin-top:2px"><?= htmlspecialchars(substr($ind['description'], 0, 80)) ?>â€¦</div>
                         <?php endif; ?>
                     </td>
                     <td><span class="badge-status badge-pending"><?= htmlspecialchars($ind['category']) ?></span></td>
@@ -148,7 +148,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Pagination info -->
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>–<?= min($offset+$per_page,$total) ?> of <?= $total ?> indicators</span>
+    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>â€“<?= min($offset+$per_page,$total) ?> of <?= $total ?> indicators</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -169,7 +169,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
             <div class="col-12">
                 <label class="qa-form-label">Description</label>
-                <textarea id="ind_desc" class="qa-form-control" placeholder="Describe what this indicator measures…" rows="3"></textarea>
+                <textarea id="ind_desc" class="qa-form-control" placeholder="Describe what this indicator measuresâ€¦" rows="3"></textarea>
             </div>
             <div class="col-md-4">
                 <label class="qa-form-label">Target Value *</label>
@@ -309,7 +309,7 @@ function viewIndicator(data) {
     $("#view_ind_category").text(data.category);
     $("#view_ind_target").text(data.target_value + " " + data.unit);
     $("#view_ind_unit").text(data.unit);
-    $("#view_ind_desc").text(data.description || "—");
+    $("#view_ind_desc").text(data.description || "â€”");
     const statusBadge = data.status === "Active" ? "<span class=\"badge-status badge-active\">Active</span>" : "<span class=\"badge-status badge-inactive\">Inactive</span>";
     $("#view_ind_status").html(statusBadge);
     const dateStr = new Date(data.created_at).toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"});
@@ -339,3 +339,5 @@ function deleteIndicator(id) {
 </script>';
 require_once __DIR__ . '/../includes/footer.php';
 ?>
+
+

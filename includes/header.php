@@ -9,10 +9,21 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($page_title ?? 'QA System') ?> | PLSP QA</title>
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem('qa_theme');
+                var theme = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
-    <link rel="stylesheet" href="/qa_system/assets/css/main.css">
+    <link rel="stylesheet" href="/qa_system/assets/css/main.css?v=<?= filemtime(__DIR__ . '/../assets/css/main.css') ?>">
 </head>
 <body>
 <!-- Sidebar -->
@@ -29,7 +40,7 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
 
     <nav class="sidebar-nav">
         <div class="nav-label">OVERVIEW</div>
-        <a href="/qa_system/index.php" class="nav-item <?= $current_page === 'index' ? 'active' : '' ?>">
+        <a href="/qa_system/pages/dashboard.php" class="nav-item <?= in_array($current_page, ['index', 'dashboard'], true) ? 'active' : '' ?>">
             <i class="bi bi-grid-1x2"></i>
             <span>Dashboard</span>
         </a>

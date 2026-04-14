@@ -1,5 +1,5 @@
-<?php
-// pages/standards.php – Standards & Policies Management
+﻿<?php
+// pages/standards.php â€“ Standards & Policies Management
 // ByteBandits QA Management System
 require_once __DIR__ . '/../config/database.php';
 $page_title = 'Standards & Policies';
@@ -94,8 +94,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Table -->
 <div class="qa-card p-0">
-    <div class="qa-table-wrapper" style="border:none;border-radius:var(--radius)">
-        <table class="qa-table">
+    <div class="qa-table-wrapper table-responsive" style="border:none;border-radius:var(--radius)">
+        <table class="table qa-table table-sm align-middle">
             <thead>
                 <tr>
                     <th style="max-width:35%">Title</th>
@@ -114,16 +114,16 @@ require_once __DIR__ . '/../includes/header.php';
                 <tr>
                     <td>
                         <div class="fw-600"><?= htmlspecialchars($rec['title'] ?? $rec['title']) ?></div>
-                        <div class="text-muted-qa" style="font-size:0.75rem"><?= htmlspecialchars(substr($rec['description'] ?? '', 0, 60)) ?>…</div>
+                        <div class="text-muted-qa" style="font-size:0.75rem"><?= htmlspecialchars(substr($rec['description'] ?? '', 0, 60)) ?>â€¦</div>
                     </td>
-                    <td><?= htmlspecialchars($rec['compliance_body'] ?? $rec['category'] ?? '—') ?></td>
-                    <td><span class="badge-status badge-pending"><?= htmlspecialchars($rec['category'] ?? $rec['owner'] ?? '—') ?></span></td>
+                    <td><?= htmlspecialchars($rec['compliance_body'] ?? $rec['category'] ?? 'â€”') ?></td>
+                    <td><span class="badge-status badge-pending"><?= htmlspecialchars($rec['category'] ?? $rec['owner'] ?? 'â€”') ?></span></td>
                     <td>
                         <span class="badge-status <?= ($rec['status'] ?? '') === 'Active' ? 'badge-active' : 'badge-draft' ?>">
                             <?= $rec['status'] ?? $rec['status'] ?>
                         </span>
                     </td>
-                    <td class="mono"><?= $rec['effective_date'] ?? $rec['effective_date'] ?? '—' ?></td>
+                    <td class="mono"><?= $rec['effective_date'] ?? $rec['effective_date'] ?? 'â€”' ?></td>
                     <td>
                         <div class="d-flex gap-1">
                             <?php if ($type_filter !== 'policies'): ?>
@@ -153,7 +153,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Pagination -->
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min(($page-1)*$per_page+1, $total) ?>–<?= min($page*$per_page, $total) ?> of <?= $total ?> records</span>
+    <span class="text-muted-qa">Showing <?= min(($page-1)*$per_page+1, $total) ?>â€“<?= min($page*$per_page, $total) ?> of <?= $total ?> records</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -175,15 +175,15 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
             <div class="col-12">
                 <label class="qa-form-label">Description</label>
-                <textarea id="rec_desc" class="qa-form-control" rows="3" placeholder="Detailed description…"></textarea>
+                <textarea id="rec_desc" class="qa-form-control" rows="3" placeholder="Detailed descriptionâ€¦"></textarea>
             </div>
             <div class="col-md-4">
                 <label class="qa-form-label"><?= $record_type === 'Standards' ? 'Compliance Body' : 'Owner' ?> *</label>
-                <input type="text" id="rec_body" class="qa-form-control" placeholder="CHED, ISO 9001, etc…" maxlength="100">
+                <input type="text" id="rec_body" class="qa-form-control" placeholder="CHED, ISO 9001, etcâ€¦" maxlength="100">
             </div>
             <div class="col-md-4">
                 <label class="qa-form-label">Category *</label>
-                <input type="text" id="rec_category" class="qa-form-control" placeholder="Academic, Governance, etc…" maxlength="100">
+                <input type="text" id="rec_category" class="qa-form-control" placeholder="Academic, Governance, etcâ€¦" maxlength="100">
             </div>
             <div class="col-md-4">
                 <label class="qa-form-label">Status</label>
@@ -276,3 +276,5 @@ function deleteRecord(id){
 </script>';
 require_once __DIR__ . '/../includes/footer.php';
 ?>
+
+

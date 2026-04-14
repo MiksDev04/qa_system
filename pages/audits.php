@@ -1,5 +1,5 @@
-<?php
-// pages/audits.php – Internal Audit Management
+﻿<?php
+// pages/audits.php â€“ Internal Audit Management
 // ByteBandits QA Management System
 require_once __DIR__ . '/../config/database.php';
 $page_title = 'Internal Audits';
@@ -122,8 +122,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Table -->
 <div class="qa-card p-0">
-    <div class="qa-table-wrapper" style="border:none;border-radius:var(--radius)">
-        <table class="qa-table">
+    <div class="qa-table-wrapper table-responsive" style="border:none;border-radius:var(--radius)">
+        <table class="table qa-table table-sm align-middle">
             <thead>
                 <tr>
                     <th>Audit Type</th>
@@ -144,8 +144,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <tr>
                     <td><span class="badge-status badge-pending"><?= htmlspecialchars($au['audit_type']) ?></span></td>
                     <td class="fw-600"><?= htmlspecialchars($au['title']) ?></td>
-                    <td class="mono"><?= $au['scheduled_date'] ? date('M d, Y', strtotime($au['scheduled_date'])) : '—' ?></td>
-                    <td><?= htmlspecialchars($au['auditor_name'] ?? '—') ?></td>
+                    <td class="mono"><?= $au['scheduled_date'] ? date('M d, Y', strtotime($au['scheduled_date'])) : 'â€”' ?></td>
+                    <td><?= htmlspecialchars($au['auditor_name'] ?? 'â€”') ?></td>
                     <td>
                         <span class="badge-status <?= $au['status'] === 'Completed' ? 'badge-active' : ($au['status'] === 'In Progress' ? 'badge-pending' : ($au['status'] === 'Cancelled' ? 'badge-closed' : 'badge-draft')) ?>">
                             <?= $au['status'] ?>
@@ -156,7 +156,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php if (!empty($au['standard_title'])): ?>
                         <span class="badge-status badge-active"><?= htmlspecialchars($au['standard_title']) ?></span>
                         <?php else: ?>
-                        <span class="text-muted-qa">—</span>
+                        <span class="text-muted-qa">â€”</span>
                         <?php endif; ?>
                     </td>
                     <?php endif; ?>
@@ -164,7 +164,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php if (!empty($au['findings'])): ?>
                         <span class="badge-status badge-closed">Has findings</span>
                         <?php else: ?>
-                        <span class="text-muted-qa">—</span>
+                        <span class="text-muted-qa">â€”</span>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -194,7 +194,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Pagination -->
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min(($page-1)*$per_page+1, max(1, $total)) ?>–<?= min($page*$per_page, $total) ?> of <?= $total ?> audits</span>
+    <span class="text-muted-qa">Showing <?= min(($page-1)*$per_page+1, max(1, $total)) ?>â€“<?= min($page*$per_page, $total) ?> of <?= $total ?> audits</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -370,17 +370,17 @@ function viewAuditDetails(id){
 
         const au = res.data;
         const findings = (au.findings && au.findings.trim()) ? au.findings : "No findings documented yet.";
-        const scope = (au.scope && au.scope.trim()) ? au.scope : (au.description || "—");
+        const scope = (au.scope && au.scope.trim()) ? au.scope : (au.description || "â€”");
 
         const html = `<div class="row g-3">
-            <div class="col-md-6"><strong>Audit Type:</strong> ${au.audit_type || "—"}</div>
-            <div class="col-md-6"><strong>Status:</strong> ${au.status || "—"}</div>
-            <div class="col-md-6"><strong>Scheduled Date:</strong> ${au.scheduled_date || "—"}</div>
-            <div class="col-md-6"><strong>Actual Date:</strong> ${au.actual_date || "—"}</div>
+            <div class="col-md-6"><strong>Audit Type:</strong> ${au.audit_type || "â€”"}</div>
+            <div class="col-md-6"><strong>Status:</strong> ${au.status || "â€”"}</div>
+            <div class="col-md-6"><strong>Scheduled Date:</strong> ${au.scheduled_date || "â€”"}</div>
+            <div class="col-md-6"><strong>Actual Date:</strong> ${au.actual_date || "â€”"}</div>
             <div class="col-md-6"><strong>Standard:</strong> ${au.standard_title || (au.standard_id ? ("#" + au.standard_id) : "None")}</div>
-            <div class="col-md-6"><strong>Auditor:</strong> ${au.auditor_name || "—"}</div>
-            <div class="col-md-6"><strong>Email:</strong> ${au.auditor_email || "—"}</div>
-            <div class="col-12"><strong>Title:</strong><p>${au.title || "—"}</p></div>
+            <div class="col-md-6"><strong>Auditor:</strong> ${au.auditor_name || "â€”"}</div>
+            <div class="col-md-6"><strong>Email:</strong> ${au.auditor_email || "â€”"}</div>
+            <div class="col-12"><strong>Title:</strong><p>${au.title || "â€”"}</p></div>
             <div class="col-12"><strong>Scope:</strong><p>${scope}</p></div>
             <div class="col-12"><strong>Findings:</strong><p>${findings}</p></div>
             <div class="col-12">
@@ -398,3 +398,5 @@ function viewAuditDetails(id){
 </script>';
 require_once __DIR__ . '/../includes/footer.php';
 ?>
+
+

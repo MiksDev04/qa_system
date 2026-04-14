@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 // pages/reports.php – QA Reports (filterable, exportable)
 // ByteBandits QA Management System
 require_once __DIR__ . '/../config/database.php';
@@ -31,6 +31,17 @@ $auditColCheck = $conn->query("SHOW COLUMNS FROM qa_audits LIKE 'standard_id'");
 if ($auditColCheck && $auditColCheck->num_rows > 0) {
     $has_audit_standard_link = true;
 }
+
+$visible_filters = [
+    'year_from' => $report_type === 'kpi_summary',
+    'year_to' => $report_type === 'kpi_summary',
+    'semester' => $report_type === 'kpi_summary',
+    'category' => in_array($report_type, ['kpi_summary', 'indicator_trend'], true),
+    'indicator' => in_array($report_type, ['kpi_summary', 'indicator_trend'], true),
+    'survey_id' => in_array($report_type, ['survey_summary', 'response_detail'], true),
+    'audit_status' => $report_type === 'audit_action_trace' || ($report_type === 'standard_compliance' && $has_audit_standard_link),
+    'standard_id' => $report_type === 'standard_compliance' || ($report_type === 'audit_action_trace' && $has_audit_standard_link),
+];
 
 // ─── Build report data ──────────────────────────────
 $report_data = [];
@@ -313,17 +324,17 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
 
         <!-- KPI filters -->
-        <div class="col-md-2 filter-kpi">
+        <div class="col-md-2 filter-year-from<?= $visible_filters['year_from'] ? '' : ' d-none' ?>">
             <label class="qa-form-label">Year From</label>
-            <input type="number" name="year_from" class="qa-form-control" value="<?= $year_from ?>" min="2000" max="2099">
+            <input type="number" name="year_from" class="qa-form-control" value="<?= $year_from ?>" min="2000" max="2099" <?= $visible_filters['year_from'] ? '' : 'disabled' ?>>
         </div>
-        <div class="col-md-2 filter-kpi">
+        <div class="col-md-2 filter-year-to<?= $visible_filters['year_to'] ? '' : ' d-none' ?>">
             <label class="qa-form-label">Year To</label>
-            <input type="number" name="year_to" class="qa-form-control" value="<?= $year_to ?>" min="2000" max="2099">
+            <input type="number" name="year_to" class="qa-form-control" value="<?= $year_to ?>" min="2000" max="2099" <?= $visible_filters['year_to'] ? '' : 'disabled' ?>>
         </div>
-        <div class="col-md-2 filter-kpi">
+        <div class="col-md-2 filter-semester<?= $visible_filters['semester'] ? '' : ' d-none' ?>">
             <label class="qa-form-label">Semester</label>
-            <select name="semester" class="qa-form-control">
+            <select name="semester" class="qa-form-control" <?= $visible_filters['semester'] ? '' : 'disabled' ?>>
                 <option value="">All</option>
                 <option value="1st"    <?= $semester==='1st'?'selected':'' ?>>1st</option>
                 <option value="2nd"    <?= $semester==='2nd'?'selected':'' ?>>2nd</option>
@@ -331,18 +342,18 @@ require_once __DIR__ . '/../includes/header.php';
                 <option value="Annual" <?= $semester==='Annual'?'selected':'' ?>>Annual</option>
             </select>
         </div>
-        <div class="col-md-2 filter-kpi">
+        <div class="col-md-2 filter-category<?= $visible_filters['category'] ? '' : ' d-none' ?>">
             <label class="qa-form-label">Category</label>
-            <select name="category" class="qa-form-control">
+            <select name="category" class="qa-form-control" <?= $visible_filters['category'] ? '' : 'disabled' ?>>
                 <option value="">All</option>
                 <?php foreach($categories as $cat): ?>
                 <option value="<?= htmlspecialchars($cat) ?>" <?= $category===$cat?'selected':'' ?>><?= htmlspecialchars($cat) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-md-3 filter-kpi filter-trend">
+        <div class="col-md-3 filter-indicator<?= $visible_filters['indicator'] ? '' : ' d-none' ?>">
             <label class="qa-form-label">Indicator</label>
-            <select name="indicator_id" class="qa-form-control">
+            <select name="indicator_id" class="qa-form-control" <?= $visible_filters['indicator'] ? '' : 'disabled' ?>>
                 <option value="">All Indicators</option>
                 <?php $indicator_list->data_seek(0); while($i=$indicator_list->fetch_assoc()): ?>
                 <option value="<?= $i['indicator_id'] ?>" <?= $indicator_id==$i['indicator_id']?'selected':'' ?>><?= htmlspecialchars($i['name']) ?></option>
@@ -351,9 +362,9 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
 
         <!-- Survey filters -->
-        <div class="col-md-4 filter-survey">
+        <div class="col-md-4 filter-survey-id<?= $visible_filters['survey_id'] ? '' : ' d-none' ?>">
             <label class="qa-form-label">Survey</label>
-            <select name="survey_id" class="qa-form-control">
+            <select name="survey_id" class="qa-form-control" <?= $visible_filters['survey_id'] ? '' : 'disabled' ?>>
                 <option value="">All Surveys</option>
                 <?php $survey_list->data_seek(0); while($s=$survey_list->fetch_assoc()): ?>
                 <option value="<?= $s['survey_id'] ?>" <?= $survey_id==$s['survey_id']?'selected':'' ?>><?= htmlspecialchars($s['title']) ?></option>
@@ -362,9 +373,9 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
 
         <!-- Audit filters -->
-        <div class="col-md-3 filter-audit">
+        <div class="col-md-3 filter-audit-status<?= $visible_filters['audit_status'] ? '' : ' d-none' ?>">
             <label class="qa-form-label">Audit Status</label>
-            <select name="audit_status" class="qa-form-control">
+            <select name="audit_status" class="qa-form-control" <?= $visible_filters['audit_status'] ? '' : 'disabled' ?>>
                 <option value="">All</option>
                 <option value="Pending" <?= $audit_status==='Pending'?'selected':'' ?>>Pending</option>
                 <option value="In Progress" <?= $audit_status==='In Progress'?'selected':'' ?>>In Progress</option>
@@ -372,9 +383,9 @@ require_once __DIR__ . '/../includes/header.php';
                 <option value="Cancelled" <?= $audit_status==='Cancelled'?'selected':'' ?>>Cancelled</option>
             </select>
         </div>
-        <div class="col-md-5 filter-audit filter-standard">
+        <div class="col-md-5 filter-standard-id<?= $visible_filters['standard_id'] ? '' : ' d-none' ?>">
             <label class="qa-form-label">Standard</label>
-            <select name="standard_id" class="qa-form-control">
+            <select name="standard_id" class="qa-form-control" <?= $visible_filters['standard_id'] ? '' : 'disabled' ?>>
                 <option value="">All Standards</option>
                 <?php if($standards_list): $standards_list->data_seek(0); while($st=$standards_list->fetch_assoc()): ?>
                 <option value="<?= $st['standard_id'] ?>" <?= $standard_id==(int)$st['standard_id']?'selected':'' ?>><?= htmlspecialchars($st['title']) ?></option>
@@ -405,7 +416,7 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
         <span class="badge-status badge-active">PLSP QA Office</span>
     </div>
-    <div class="qa-table-wrapper" style="border:none;border-radius:0 0 var(--radius) var(--radius);overflow-x:auto">
+    <div class="qa-table-wrapper table-responsive" style="border:none;border-radius:0 0 var(--radius) var(--radius)">
         <table class="qa-table" id="reportTable">
             <thead>
                 <tr>
@@ -445,22 +456,59 @@ $extra_js = '<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jsp
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script>
 const REPORT_LABEL = '.json_encode($report_type_label).';
+const HAS_AUDIT_STANDARD_LINK = '.($has_audit_standard_link ? 'true' : 'false').';
+
+function setFilterVisibility(selector, show){
+    const blocks = document.querySelectorAll(selector);
+    blocks.forEach((block) => {
+        block.classList.toggle("d-none", !show);
+        block.querySelectorAll("input, select, textarea").forEach((el) => {
+            el.disabled = !show;
+        });
+    });
+}
 
 function toggleFilters(){
-    const type = $("#report_type").val();
-    $(".filter-kpi").toggle(type==="kpi_summary"||type==="indicator_trend");
-    $(".filter-trend").toggle(type==="indicator_trend");
-    $(".filter-survey").toggle(type==="survey_summary"||type==="response_detail");
-    $(".filter-audit").toggle(type==="audit_action_trace"||type==="standard_compliance");
+    const reportType = document.getElementById("report_type");
+    const type = reportType ? reportType.value : "kpi_summary";
+
+    setFilterVisibility(".filter-year-from, .filter-year-to, .filter-semester, .filter-category, .filter-indicator, .filter-survey-id, .filter-audit-status, .filter-standard-id", false);
+
+    if(type === "kpi_summary"){
+        setFilterVisibility(".filter-year-from, .filter-year-to, .filter-semester, .filter-category, .filter-indicator", true);
+    }
+    else if(type === "indicator_trend"){
+        setFilterVisibility(".filter-category, .filter-indicator", true);
+    }
+    else if(type === "survey_summary" || type === "response_detail"){
+        setFilterVisibility(".filter-survey-id", true);
+    }
+    else if(type === "audit_action_trace"){
+        setFilterVisibility(".filter-audit-status", true);
+        setFilterVisibility(".filter-standard-id", HAS_AUDIT_STANDARD_LINK);
+    }
+    else if(type === "standard_compliance"){
+        setFilterVisibility(".filter-standard-id", true);
+        setFilterVisibility(".filter-audit-status", HAS_AUDIT_STANDARD_LINK);
+    }
 }
-$(toggleFilters);
+document.addEventListener("DOMContentLoaded", function(){
+    const reportType = document.getElementById("report_type");
+    if (reportType) {
+        reportType.addEventListener("change", toggleFilters);
+    }
+    toggleFilters();
+});
 
 function exportCSV(){
     const table = document.getElementById("reportTable");
     if(!table){ showToast("No data to export","error"); return; }
     let csv = [];
     table.querySelectorAll("tr").forEach(row => {
-        const cells = [...row.querySelectorAll("th,td")].map(c => `"${c.innerText.replace(/"/g,"\\\"").replace(/\\n/g," ")}"`);
+        const cells = [...row.querySelectorAll("th,td")].map(c => {
+            const text = c.innerText.replace(/\\n/g, " ").replace(/\\r/g, " ");
+            return JSON.stringify(text);
+        });
         csv.push(cells.join(","));
     });
     const blob = new Blob([csv.join("\\n")], {type:"text/csv;charset=utf-8;"});
