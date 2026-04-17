@@ -68,6 +68,110 @@
     --scrollbar-thumb:#c8cce0;
 }
 
+/* Bootstrap theme bridge */
+:root {
+    --bs-font-sans-serif: 'Space Grotesk', system-ui, sans-serif;
+    --bs-border-radius: var(--radius-sm);
+    --bs-border-radius-lg: var(--radius);
+}
+
+[data-theme="dark"] {
+    --bs-body-bg: var(--bg-base);
+    --bs-body-color: var(--text-primary);
+    --bs-border-color: var(--border);
+    --bs-primary: var(--accent);
+    --bs-primary-rgb: 79, 142, 247;
+    --bs-secondary-color: var(--text-secondary);
+    --bs-secondary-bg: var(--bg-secondary);
+    --bs-tertiary-bg: var(--bg-card);
+}
+
+[data-theme="light"] {
+    --bs-body-bg: var(--bg-base);
+    --bs-body-color: var(--text-primary);
+    --bs-border-color: var(--border);
+    --bs-primary: var(--accent);
+    --bs-primary-rgb: 59, 124, 244;
+    --bs-secondary-color: var(--text-secondary);
+    --bs-secondary-bg: var(--bg-secondary);
+    --bs-tertiary-bg: var(--bg-card);
+}
+
+.card {
+    --bs-card-bg: var(--bg-card);
+    --bs-card-border-color: var(--border);
+    --bs-card-color: var(--text-primary);
+}
+
+.form-control,
+.form-select {
+    background: var(--bg-input);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background: var(--bg-input);
+    border-color: var(--accent);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.2rem var(--accent-glow);
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+}
+
+.form-select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: var(--text-secondary);
+    --bs-btn-border-color: var(--border);
+    --bs-btn-hover-color: var(--text-primary);
+    --bs-btn-hover-bg: var(--bg-hover);
+    --bs-btn-hover-border-color: var(--accent);
+    --bs-btn-active-color: var(--text-primary);
+    --bs-btn-active-bg: var(--bg-hover);
+    --bs-btn-active-border-color: var(--accent);
+}
+
+.btn-group > .btn {
+    border-color: var(--border);
+}
+
+.nav-pills {
+    --bs-nav-pills-link-active-bg: var(--accent);
+    --bs-nav-pills-link-active-color: #fff;
+}
+
+.nav-pills .nav-link {
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.nav-pills .nav-link:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.pagination {
+    --bs-pagination-bg: var(--bg-card);
+    --bs-pagination-color: var(--text-secondary);
+    --bs-pagination-border-color: var(--border);
+    --bs-pagination-hover-bg: var(--bg-hover);
+    --bs-pagination-hover-color: var(--accent);
+    --bs-pagination-hover-border-color: var(--accent);
+    --bs-pagination-active-bg: var(--accent);
+    --bs-pagination-active-border-color: var(--accent);
+    --bs-pagination-disabled-bg: var(--bg-card);
+    --bs-pagination-disabled-color: var(--text-muted);
+    --bs-pagination-disabled-border-color: var(--border);
+}
+
 /* ─── Reset & Base ──────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

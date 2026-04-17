@@ -11,18 +11,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - (New features will be added here automatically)
+- Added sample policy document files in `docs/` matching seeded `qa_policies.document_url` paths.
 
 ### Changed
-- (Changes will be added here automatically)
+- Added workflow rule to log each new user request in both TODO and CHANGELOG.
+- Aligned Standards and Policies table layout with KPI Indicators, including row numbering and record spacing.
+- Aligned Internal Audits table layout with KPI Indicators, including row numbering and consistent record spacing.
+- Expanded Policies management to use additional `qa_policies` fields (version, linked standard, document URL, expiry date, last reviewed).
+- Upgraded sample policy PDF files in `docs/` with a more professional format (header band, metadata section, structured content blocks, and footer).
+- Migrated policy document storage from local files to Cloudinary uploads.
 
 ### Fixed
-- (Bug fixes will be added here automatically)
+- Fixed Responses detail modal formatting and fallback values for respondent info and answers.
+- Replaced broken character rendering in Responses page details (rating display and missing-value markers).
+- Fixed QA Records status information display with clear status tiers and consistent status badge labels.
+- Added a View action in Standards & Policies so policy details and document links can be read directly from the UI.
+- Improved Policies View modal to preview PDF documents inline, with Open/Download fallback actions.
+- Synchronized `qa_policies.document_url` values with generated files in `docs/` in both live DB records and `database.sql` seed sync block.
+- Changed Policies Add/Edit form to use PDF file upload instead of manual document URL entry.
+- Added backend policy document upload handling that stores uploaded files under `/qa_system/docs/policies/`.
+- Fixed Internal Audits Findings fallback display to show `No findings` instead of garbled characters when empty.
+- Fixed Cloudinary "Customer is marked as untrusted" PDF access issue by storing signed raw download URLs instead of blocked direct raw URLs.
+- Fixed policy `document_url` truncation by expanding storage to support long signed Cloudinary URLs.
+- Updated policy document UI to hide raw URLs and show a compact in-modal PDF preview with Open/Download actions.
+- Fixed Policies View button preview detection for signed Cloudinary URLs so compact PDF preview appears reliably.
 
 ### Deprecated
 - (Deprecations will be noted here)
 
 ### Removed
 - (Removals will be noted here)
+- Removed local policy document artifacts under `docs/`; policy files now use Cloudinary URLs.
 
 ### Security
 - (Security-related changes will be noted here)
@@ -205,7 +224,7 @@ To automatically update this changelog on each commit:
 
 ---
 
-**Last Updated**: 2026-04-13  
+**Last Updated**: 2026-04-17  
 **Maintained By**: ByteBandits Development Team
 
 ---

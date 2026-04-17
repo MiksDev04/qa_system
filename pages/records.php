@@ -118,7 +118,22 @@ require_once __DIR__ . '/../includes/header.php';
                     $met = $rec['actual_value'] >= $rec['target_value'];
                     $variance = $rec['actual_value'] - $rec['target_value'];
                     $pct = $rec['target_value'] > 0 ? ($rec['actual_value']/$rec['target_value'])*100 : 0;
-                    $barClass = $met ? 'success' : ($pct >= 80 ? 'warning' : 'danger');
+                    if ($rec['target_value'] <= 0) {
+                        $statusClass = 'badge-inactive';
+                        $statusIcon = 'bi-dash-circle-fill';
+                        $statusText = 'No Target';
+                        $barClass = 'warning';
+                    } elseif ($pct >= 100) {
+                        $statusClass = 'badge-active';
+                        $statusIcon = 'bi-check-circle-fill';
+                        $statusText = 'Met Target';
+                        $barClass = 'success';
+                    } else {
+                        $statusClass = 'badge-closed';
+                        $statusIcon = 'bi-x-circle-fill';
+                        $statusText = 'Below Target';
+                        $barClass = 'danger';
+                    }
                 ?>
                 <tr>
                     <td class="text-muted-qa mono"><?= $n++ ?></td>
@@ -138,11 +153,11 @@ require_once __DIR__ . '/../includes/header.php';
                         <?= ($variance >= 0 ? '+' : '') . number_format($variance, 2) ?>
                     </td>
                     <td>
-                        <span class="badge-status <?= $met ? 'badge-active':'badge-closed' ?>">
-                            <?= $met ? 'âœ“ Met':'âœ— Below' ?>
+                        <span class="badge-status <?= $statusClass ?>">
+                            <i class="bi <?= $statusIcon ?>"></i> <?= $statusText ?>
                         </span>
                     </td>
-                    <td class="text-muted-qa"><?= htmlspecialchars($rec['recorded_by'] ?? 'â€”') ?></td>
+                    <td class="text-muted-qa"><?= htmlspecialchars($rec['recorded_by'] ?? 'N/A') ?></td>
                     <td>
                         <div class="d-flex gap-1">
                             <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon"
@@ -183,7 +198,7 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="col-md-6">
                 <label class="qa-form-label">Indicator *</label>
                 <select id="rec_indicator" class="qa-form-control">
-                    <option value="">Select indicatorâ€¦</option>
+                    <option value="">Select indicator</option>
                     <?php foreach($ind_opts as $i): ?>
                     <option value="<?= $i['indicator_id'] ?>"><?= htmlspecialchars($i['name']) ?></option>
                     <?php endforeach; ?>
@@ -323,16 +338,27 @@ function viewRecord(data){
     $("#view_rec_actual").text(data.actual_value + " " + data.unit);
     $("#view_rec_target").text(data.target_value + " " + data.unit);
     const variance = data.actual_value - data.target_value;
-    const met = data.actual_value >= data.target_value;
     const varianceText = (variance >= 0 ? "+" : "") + variance.toFixed(2);
-    const varianceHTML = met ? `<span style="color: var(--success)">${varianceText}</span>` : `<span style="color: var(--danger)">${varianceText}</span>`;
+    const varianceHTML = variance >= 0 ? `<span style="color: var(--success)">${varianceText}</span>` : `<span style="color: var(--danger)">${varianceText}</span>`;
     $("#view_rec_variance").html(varianceHTML);
-    const statusBadge = met ? `<span class="badge-status badge-active">âœ“ Met Target</span>` : `<span class="badge-status badge-closed">âœ— Below Target</span>`;
+
+    const target = Number(data.target_value || 0);
+    const actual = Number(data.actual_value || 0);
+    const pct = target > 0 ? (actual / target) * 100 : 0;
+    let statusBadge = "";
+    if (target <= 0) {
+        statusBadge = `<span class="badge-status badge-inactive"><i class="bi bi-dash-circle-fill"></i> No Target</span>`;
+    } else if (pct >= 100) {
+        statusBadge = `<span class="badge-status badge-active"><i class="bi bi-check-circle-fill"></i> Met Target</span>`;
+    } else {
+        statusBadge = `<span class="badge-status badge-closed"><i class="bi bi-x-circle-fill"></i> Below Target</span>`;
+    }
+
     $("#view_rec_status").html(statusBadge);
-    $("#view_rec_by").text(data.recorded_by || "â€”");
+    $("#view_rec_by").text(data.recorded_by || "N/A");
     const dateStr = new Date(data.created_at).toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"});
     $("#view_rec_date").text(dateStr);
-    $("#view_rec_remarks").text(data.remarks || "â€”");
+    $("#view_rec_remarks").text(data.remarks || "N/A");
     new bootstrap.Modal(document.getElementById("viewRecModal")).show();
 }
 

@@ -1,5 +1,5 @@
 ﻿<?php
-// pages/responses.php â€“ Survey Responses viewer
+// pages/responses.php - Survey Responses viewer
 // ByteBandits QA Management System
 require_once __DIR__ . '/../config/database.php';
 $page_title = 'Survey Responses';
@@ -116,7 +116,7 @@ require_once __DIR__ . '/../includes/header.php';
         ?>
         <div class="stat-card">
             <div class="stat-icon amber"><i class="bi bi-star-half"></i></div>
-            <div><div class="stat-value"><?= $avg_q ? number_format($avg_q,2) : 'â€”' ?></div><div class="stat-label">Avg Rating</div></div>
+            <div><div class="stat-value"><?= $avg_q ? number_format($avg_q,2) : 'N/A' ?></div><div class="stat-label">Avg Rating</div></div>
         </div>
     </div>
     <div class="col-sm-4">
@@ -162,7 +162,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php if (!empty($seg['avg_rating'])): ?>
                         <span class="fw-600" style="color:var(--warning)"><i class="bi bi-star-fill"></i> <?= number_format((float)$seg['avg_rating'], 2) ?></span>
                         <?php else: ?>
-                        <span class="text-muted-qa">â€”</span>
+                        <span class="text-muted-qa">N/A</span>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -203,14 +203,14 @@ require_once __DIR__ . '/../includes/header.php';
                     <td>
                         <?php if($res['respondent_role']): ?>
                         <span class="badge-status badge-pending"><?= htmlspecialchars($res['respondent_role']) ?></span>
-                        <?php else: echo '<span class="text-muted-qa">â€”</span>'; endif; ?>
+                        <?php else: echo '<span class="text-muted-qa">N/A</span>'; endif; ?>
                     </td>
                     <td>
                         <?php if($res['avg_rating']): ?>
                         <span class="fw-600" style="color:var(--warning)">
                             <i class="bi bi-star-fill"></i> <?= number_format($res['avg_rating'],1) ?>
                         </span>
-                        <?php else: echo '<span class="text-muted-qa">â€”</span>'; endif; ?>
+                        <?php else: echo '<span class="text-muted-qa">N/A</span>'; endif; ?>
                     </td>
                     <td class="mono"><?= $res['answer_count'] ?></td>
                     <td class="text-muted-qa mono" style="font-size:0.8rem"><?= date('M d, Y H:i',strtotime($res['submitted_at'])) ?></td>
@@ -229,7 +229,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>â€“<?= min($offset+$per_page,$total) ?> of <?= $total ?> responses</span>
+    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>-<?= min($offset+$per_page,$total) ?> of <?= $total ?> responses</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -241,53 +241,140 @@ require_once __DIR__ . '/../includes/header.php';
         <h5 class="modal-title">Response Detail</h5>
         <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="responseDetailBody">Loadingâ€¦</div>
+      <div class="modal-body" id="responseDetailBody">Loading...</div>
     </div>
   </div>
 </div>
 
 <?php
-$extra_js = '<script>
-$(function(){ buildPagination("paginationContainer",'.$page.','.$total_pages.',"goPage"); });
+$extra_js = str_replace(
+    ['__CURRENT_PAGE__', '__TOTAL_PAGES__'],
+    [(string)$page, (string)$total_pages],
+    <<<'SCRIPT'
+<script>
+const currentPage = __CURRENT_PAGE__;
+const totalPages = __TOTAL_PAGES__;
 
-function goPage(p){ const url=new URL(window.location); url.searchParams.set("page",p); window.location=url; }
-function applyFilters(){ const url=new URL(window.location); url.searchParams.set("survey_id",$("#f-survey").val()); url.searchParams.set("role",$("#f-role").val()); url.searchParams.set("page",1); window.location=url; }
+$(function () {
+    buildPagination("paginationContainer", currentPage, totalPages, "goPage");
+});
 
-function viewResponse(responseId){
-    $("#responseDetailBody").html(`<div class="text-center py-3"><div class="spinner-border spinner-border-sm" style="color:var(--accent)"></div></div>`);
+function goPage(p) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("page", p);
+    window.location.href = url.toString();
+}
+
+function applyFilters() {
+    const url = new URL(window.location.href);
+    url.searchParams.set("survey_id", $("#f-survey").val());
+    url.searchParams.set("role", $("#f-role").val());
+    url.searchParams.set("page", 1);
+    window.location.href = url.toString();
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function textOrFallback(value, fallback = "N/A") {
+    const text = String(value ?? "").trim();
+    return text ? escapeHtml(text) : fallback;
+}
+
+function formatSubmittedAt(value) {
+    const raw = String(value ?? "").trim();
+    if (!raw) {
+        return "N/A";
+    }
+
+    const parsed = new Date(raw.replace(" ", "T"));
+    if (Number.isNaN(parsed.getTime())) {
+        return escapeHtml(raw);
+    }
+
+    return escapeHtml(parsed.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    }));
+}
+
+function renderRating(ratingValue) {
+    const rating = Math.max(0, Math.min(5, Number(ratingValue) || 0));
+    if (!rating) {
+        return '<span class="text-muted-qa">No rating provided</span>';
+    }
+
+    const stars = Array.from({ length: 5 }, (_, idx) => {
+        const iconClass = idx < rating ? "bi-star-fill" : "bi-star";
+        return `<i class="bi ${iconClass}"></i>`;
+    }).join("");
+
+    return `<span class="d-inline-flex align-items-center gap-1" style="color:var(--warning)">${stars}</span> <span class="text-muted-qa">(${rating}/5)</span>`;
+}
+
+function renderAnswer(answer) {
+    const questionType = String(answer.question_type || "").toLowerCase();
+    if (questionType === "rating") {
+        return renderRating(answer.rating);
+    }
+
+    const answerText = String(answer.answer_text ?? "").trim();
+    if (!answerText) {
+        return '<span class="text-muted-qa">No answer provided</span>';
+    }
+
+    return `<span style="color:var(--text-primary)">${escapeHtml(answerText)}</span>`;
+}
+
+function viewResponse(responseId) {
+    $("#responseDetailBody").html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm" style="color:var(--accent)"></div></div>');
     new bootstrap.Modal(document.getElementById("responseDetailModal")).show();
-    $.get("/qa_system/api/responses.php", {action:"get_detail", response_id:responseId}, function(res){
-        if(res.status!=="success"){ $("#responseDetailBody").html("<p class=\"text-danger\">Error loading response.</p>"); return; }
-        const d = res.data;
+
+    $.get("/qa_system/api/responses.php", { action: "get_detail", response_id: responseId }, function (res) {
+        if (res.status !== "success") {
+            $("#responseDetailBody").html('<p class="text-danger">Error loading response.</p>');
+            return;
+        }
+
+        const d = res.data || {};
         let html = `<div class="mb-3 p-3" style="background:var(--bg-hover);border-radius:var(--radius-sm)">
             <div class="row g-2">
-                <div class="col-md-6"><span class="text-muted-qa">Respondent: </span><b>${d.respondent_name||"Anonymous"}</b></div>
-                <div class="col-md-6"><span class="text-muted-qa">Role: </span><b>${d.respondent_role||"â€”"}</b></div>
-                <div class="col-md-6"><span class="text-muted-qa">Email: </span>${d.respondent_email||"â€”"}</div>
-                <div class="col-md-6"><span class="text-muted-qa">Submitted: </span>${d.submitted_at}</div>
+                <div class="col-md-6"><span class="text-muted-qa">Respondent: </span><b>${textOrFallback(d.respondent_name, "Anonymous")}</b></div>
+                <div class="col-md-6"><span class="text-muted-qa">Role: </span><b>${textOrFallback(d.respondent_role)}</b></div>
+                <div class="col-md-6"><span class="text-muted-qa">Email: </span>${textOrFallback(d.respondent_email)}</div>
+                <div class="col-md-6"><span class="text-muted-qa">Submitted: </span>${formatSubmittedAt(d.submitted_at)}</div>
             </div>
         </div>`;
-        if(d.answers && d.answers.length){
-            d.answers.forEach(function(a,i){
-                let ansHtml = "";
-                if(a.question_type==="rating" && a.rating){
-                    const stars = "â˜…".repeat(a.rating) + "â˜†".repeat(5-a.rating);
-                    ansHtml = `<span style="color:var(--warning);font-size:1.1rem">${stars}</span> <span class="text-muted-qa">(${a.rating}/5)</span>`;
-                } else {
-                    ansHtml = `<span style="color:var(--text-primary)">${a.answer_text||"â€”"}</span>`;
-                }
+
+        if (Array.isArray(d.answers) && d.answers.length > 0) {
+            d.answers.forEach(function (a, i) {
+                const questionText = textOrFallback(a.question_text, `Question ${i + 1}`);
                 html += `<div class="mb-2 p-3" style="border:1px solid var(--border);border-radius:var(--radius-sm)">
-                    <div class="fw-600 mb-1">${i+1}. ${a.question_text}</div>
-                    <div>${ansHtml}</div>
+                    <div class="fw-600 mb-1">${i + 1}. ${questionText}</div>
+                    <div>${renderAnswer(a)}</div>
                 </div>`;
             });
         } else {
-            html += "<p class=\"text-muted-qa text-center\">No answers found.</p>";
+            html += '<p class="text-muted-qa text-center">No answers found.</p>';
         }
+
         $("#responseDetailBody").html(html);
+    }).fail(function () {
+        $("#responseDetailBody").html('<p class="text-danger">Error loading response.</p>');
     });
 }
-</script>';
+</script>
+SCRIPT
+);
 require_once __DIR__ . '/../includes/footer.php';
 ?>
 

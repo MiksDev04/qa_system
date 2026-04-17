@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS qa_policies (
     description     TEXT,
     category        VARCHAR(100),       -- e.g., 'Student Assessment', 'Faculty Development'
     standard_id     INT,
-    document_url    VARCHAR(255),       -- URL/path to policy document
+    document_url    VARCHAR(1024),      -- Cloudinary URL to policy document
     version         VARCHAR(20) DEFAULT '1.0',
     effective_date  DATE,
     expiry_date     DATE,
@@ -196,7 +196,7 @@ INSERT INTO qa_records (indicator_id, year, semester, actual_value, remarks, rec
 (1, 2023, 'Annual', 78.50,  'Slightly below target; remedial programs recommended', 'QA Office'),
 (1, 2024, 'Annual', 82.10,  'Target achieved; improvement noted after review program', 'QA Office'),
 (2, 2023, 'Annual', 71.00,  'Below target; advising program strengthened', 'QA Office'),
-(2, 2024, 'Annual', 74.50,  'Near target; continuing improvement', 'QA Office'),
+(2, 2024, 'Annual', 74.50,  'Below target; continuing improvement', 'QA Office'),
 (3, 2023, '1st',    3.80,   'Good but below target; action plan initiated', 'QA Office'),
 (3, 2023, '2nd',    4.10,   'Target exceeded', 'QA Office'),
 (4, 2023, 'Annual', 83.00,  'Slightly below target', 'QA Office'),
@@ -231,7 +231,12 @@ INSERT INTO qa_standards (title, description, compliance_body, category, status,
 ('ISO 9001:2015 Quality Management', 'International standard for quality management systems', 'ISO', 'Governance', 'Active', '2023-06-01'),
 ('Program Educational Objectives (PEO)', 'Institutional strategic direction and program outcomes', 'Internal', 'Academic', 'Active', '2022-09-01');
 
-INSERT INTO qa_policies (title, description, category, standard_id, version, status, owner, effective_date) VALUES
-('Student Assessment Policy', 'Guidelines for assessing student learning outcomes', 'Student Assessment', 1, '2.0', 'Active', 'Academic Affairs', '2024-01-01'),
-('Faculty Evaluation Procedure', 'Process for evaluating faculty performance', 'Faculty Development', 1, '1.5', 'Active', 'Human Resources', '2023-09-01'),
-('Quality Management System Policy', 'Foundational policy for QA system operations', 'Governance', 2, '1.0', 'Active', 'QA Office', '2023-06-01');
+INSERT INTO qa_policies (title, description, category, standard_id, document_url, version, effective_date, expiry_date, status, owner, last_reviewed) VALUES
+('Student Assessment Policy', 'Guidelines for assessing student learning outcomes', 'Student Assessment', 1, NULL, '2.0', '2024-01-01', '2026-12-31', 'Active', 'Academic Affairs', '2025-12-15'),
+('Faculty Evaluation Procedure', 'Process for evaluating faculty performance', 'Faculty Development', 1, NULL, '1.5', '2023-09-01', NULL, 'Active', 'Human Resources', '2025-07-10'),
+('Quality Management System Policy', 'Foundational policy for QA system operations', 'Governance', 2, NULL, '1.0', '2023-06-01', NULL, 'Active', 'QA Office', '2025-03-01');
+
+-- Remove legacy local file URLs. New uploads are stored in Cloudinary.
+UPDATE qa_policies
+SET document_url = NULL
+WHERE document_url LIKE '/qa_system/docs/%';

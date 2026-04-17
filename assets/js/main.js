@@ -75,7 +75,9 @@ function showToast(message, type = 'info') {
 
 // ─── AJAX Helper ─────────────────────────────────────
 function qaAjax(url, data, onSuccess, onError) {
-    $.ajax({
+    const isFormData = Object.prototype.toString.call(data) === '[object FormData]';
+
+    const ajaxOptions = {
         url: url,
         method: 'POST',
         data: data,
@@ -90,10 +92,21 @@ function qaAjax(url, data, onSuccess, onError) {
             }
         },
         error: function(xhr) {
-            showToast('Server error. Please try again.', 'error');
+            const fallback = 'Server error. Please try again.';
+            const serverMessage = xhr && xhr.responseJSON && xhr.responseJSON.message
+                ? String(xhr.responseJSON.message)
+                : (xhr && xhr.responseText ? String(xhr.responseText).trim() : '');
+            showToast(serverMessage || fallback, 'error');
             if (onError) onError(xhr);
         }
-    });
+    };
+
+    if (isFormData) {
+        ajaxOptions.processData = false;
+        ajaxOptions.contentType = false;
+    }
+
+    $.ajax(ajaxOptions);
 }
 
 // ─── Delete confirmation ──────────────────────────────
@@ -107,29 +120,53 @@ function buildPagination(containerId, currentPage, totalPages, onPageChange) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let html = '';
+    let html = '<nav aria-label="Pagination"><ul class="pagination pagination-sm mb-0">';
+
     // Prev
-    html += `<button class="qa-page-btn" onclick="${onPageChange}(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''}>
+    html += `
+        <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+            <button type="button" class="page-link" onclick="${onPageChange}(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous">
                 <i class="bi bi-chevron-left"></i>
-             </button>`;
+            </button>
+        </li>
+    `;
 
     // Pages
     let start = Math.max(1, currentPage - 2);
     let end = Math.min(totalPages, currentPage + 2);
-    if (start > 1) html += `<button class="qa-page-btn" onclick="${onPageChange}(1)">1</button>${start > 2 ? '<span class="qa-page-btn" style="border:none;cursor:default">…</span>' : ''}`;
-    for (let p = start; p <= end; p++) {
-        html += `<button class="qa-page-btn ${p === currentPage ? 'active' : ''}" onclick="${onPageChange}(${p})">${p}</button>`;
+
+    if (start > 1) {
+        html += `<li class="page-item"><button type="button" class="page-link" onclick="${onPageChange}(1)">1</button></li>`;
+        if (start > 2) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
     }
+
+    for (let p = start; p <= end; p++) {
+        html += `
+            <li class="page-item ${p === currentPage ? 'active' : ''}">
+                <button type="button" class="page-link" onclick="${onPageChange}(${p})">${p}</button>
+            </li>
+        `;
+    }
+
     if (end < totalPages) {
-        html += `${end < totalPages - 1 ? '<span class="qa-page-btn" style="border:none;cursor:default">…</span>' : ''}
-                 <button class="qa-page-btn" onclick="${onPageChange}(${totalPages})">${totalPages}</button>`;
+        if (end < totalPages - 1) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+        html += `<li class="page-item"><button type="button" class="page-link" onclick="${onPageChange}(${totalPages})">${totalPages}</button></li>`;
     }
 
     // Next
-    html += `<button class="qa-page-btn" onclick="${onPageChange}(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>
+    html += `
+        <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+            <button type="button" class="page-link" onclick="${onPageChange}(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next">
                 <i class="bi bi-chevron-right"></i>
-             </button>`;
+            </button>
+        </li>
+    `;
 
+    html += '</ul></nav>';
     container.innerHTML = html;
 }
 

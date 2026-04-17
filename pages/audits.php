@@ -1,5 +1,5 @@
 ﻿<?php
-// pages/audits.php â€“ Internal Audit Management
+// pages/audits.php - Internal Audit Management
 // ByteBandits QA Management System
 require_once __DIR__ . '/../config/database.php';
 $page_title = 'Internal Audits';
@@ -51,6 +51,8 @@ $count_stmt->execute();
 $total = (int)$count_stmt->get_result()->fetch_assoc()['c'];
 $total_pages = max(1, ceil($total / $per_page));
 $offset = ($page - 1) * $per_page;
+$show_start = $total > 0 ? ($offset + 1) : 0;
+$show_end = $total > 0 ? min($offset + $per_page, $total) : 0;
 
 $main_sql = $has_standard_link
     ? "SELECT a.*, s.title AS standard_title
@@ -126,8 +128,9 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table qa-table table-sm align-middle">
             <thead>
                 <tr>
-                    <th>Audit Type</th>
+                    <th>#</th>
                     <th>Title</th>
+                    <th>Audit Type</th>
                     <th>Scheduled Date</th>
                     <th>Auditor</th>
                     <th>Status</th>
@@ -138,14 +141,31 @@ require_once __DIR__ . '/../includes/header.php';
             </thead>
             <tbody>
                 <?php if ($audits->num_rows === 0): ?>
-                <tr><td colspan="<?= $has_standard_link ? '8' : '7' ?>"><div class="empty-state"><i class="bi bi-inbox"></i><p>No audits found</p></div></td></tr>
+                <tr><td colspan="<?= $has_standard_link ? '9' : '8' ?>"><div class="empty-state"><i class="bi bi-inbox"></i><p>No audits found</p></div></td></tr>
                 <?php else: ?>
-                <?php while ($au = $audits->fetch_assoc()): ?>
+                <?php $n = $offset + 1; while ($au = $audits->fetch_assoc()): ?>
+                <?php
+                    $scope_preview = trim((string)($au['scope'] ?? $au['description'] ?? ''));
+                    if ($scope_preview !== '' && strlen($scope_preview) > 80) {
+                        $scope_preview = substr($scope_preview, 0, 80) . '...';
+                    }
+                ?>
                 <tr>
+                    <td class="text-muted-qa mono"><?= $n++ ?></td>
+                    <td>
+                        <div class="fw-600"><?= htmlspecialchars($au['title']) ?></div>
+                        <?php if ($scope_preview !== ''): ?>
+                        <div class="text-muted-qa" style="font-size:0.78rem;margin-top:2px"><?= htmlspecialchars($scope_preview) ?></div>
+                        <?php endif; ?>
+                    </td>
                     <td><span class="badge-status badge-pending"><?= htmlspecialchars($au['audit_type']) ?></span></td>
-                    <td class="fw-600"><?= htmlspecialchars($au['title']) ?></td>
-                    <td class="mono"><?= $au['scheduled_date'] ? date('M d, Y', strtotime($au['scheduled_date'])) : 'â€”' ?></td>
-                    <td><?= htmlspecialchars($au['auditor_name'] ?? 'â€”') ?></td>
+                    <td class="mono"><?= $au['scheduled_date'] ? date('M d, Y', strtotime($au['scheduled_date'])) : 'N/A' ?></td>
+                    <td>
+                        <div><?= htmlspecialchars($au['auditor_name'] ?? 'N/A') ?></div>
+                        <?php if (!empty($au['auditor_email'])): ?>
+                        <div class="text-muted-qa" style="font-size:0.78rem;margin-top:2px"><?= htmlspecialchars($au['auditor_email']) ?></div>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <span class="badge-status <?= $au['status'] === 'Completed' ? 'badge-active' : ($au['status'] === 'In Progress' ? 'badge-pending' : ($au['status'] === 'Cancelled' ? 'badge-closed' : 'badge-draft')) ?>">
                             <?= $au['status'] ?>
@@ -156,7 +176,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php if (!empty($au['standard_title'])): ?>
                         <span class="badge-status badge-active"><?= htmlspecialchars($au['standard_title']) ?></span>
                         <?php else: ?>
-                        <span class="text-muted-qa">â€”</span>
+                        <span class="text-muted-qa">N/A</span>
                         <?php endif; ?>
                     </td>
                     <?php endif; ?>
@@ -164,7 +184,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php if (!empty($au['findings'])): ?>
                         <span class="badge-status badge-closed">Has findings</span>
                         <?php else: ?>
-                        <span class="text-muted-qa">â€”</span>
+                        <span class="text-muted-qa">No findings</span>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -194,7 +214,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Pagination -->
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min(($page-1)*$per_page+1, max(1, $total)) ?>â€“<?= min($page*$per_page, $total) ?> of <?= $total ?> audits</span>
+    <span class="text-muted-qa">Showing <?= $show_start ?>-<?= $show_end ?> of <?= $total ?> audits</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -370,17 +390,17 @@ function viewAuditDetails(id){
 
         const au = res.data;
         const findings = (au.findings && au.findings.trim()) ? au.findings : "No findings documented yet.";
-        const scope = (au.scope && au.scope.trim()) ? au.scope : (au.description || "â€”");
+        const scope = (au.scope && au.scope.trim()) ? au.scope : (au.description || "N/A");
 
         const html = `<div class="row g-3">
-            <div class="col-md-6"><strong>Audit Type:</strong> ${au.audit_type || "â€”"}</div>
-            <div class="col-md-6"><strong>Status:</strong> ${au.status || "â€”"}</div>
-            <div class="col-md-6"><strong>Scheduled Date:</strong> ${au.scheduled_date || "â€”"}</div>
-            <div class="col-md-6"><strong>Actual Date:</strong> ${au.actual_date || "â€”"}</div>
+            <div class="col-md-6"><strong>Audit Type:</strong> ${au.audit_type || "N/A"}</div>
+            <div class="col-md-6"><strong>Status:</strong> ${au.status || "N/A"}</div>
+            <div class="col-md-6"><strong>Scheduled Date:</strong> ${au.scheduled_date || "N/A"}</div>
+            <div class="col-md-6"><strong>Actual Date:</strong> ${au.actual_date || "N/A"}</div>
             <div class="col-md-6"><strong>Standard:</strong> ${au.standard_title || (au.standard_id ? ("#" + au.standard_id) : "None")}</div>
-            <div class="col-md-6"><strong>Auditor:</strong> ${au.auditor_name || "â€”"}</div>
-            <div class="col-md-6"><strong>Email:</strong> ${au.auditor_email || "â€”"}</div>
-            <div class="col-12"><strong>Title:</strong><p>${au.title || "â€”"}</p></div>
+            <div class="col-md-6"><strong>Auditor:</strong> ${au.auditor_name || "N/A"}</div>
+            <div class="col-md-6"><strong>Email:</strong> ${au.auditor_email || "N/A"}</div>
+            <div class="col-12"><strong>Title:</strong><p>${au.title || "N/A"}</p></div>
             <div class="col-12"><strong>Scope:</strong><p>${scope}</p></div>
             <div class="col-12"><strong>Findings:</strong><p>${findings}</p></div>
             <div class="col-12">
