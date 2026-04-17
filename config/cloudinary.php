@@ -2,12 +2,64 @@
 // config/cloudinary.php
 // Cloudinary configuration for policy document uploads.
 
+function loadProjectEnv(): void
+{
+    static $loaded = false;
+    if ($loaded) {
+        return;
+    }
+    $loaded = true;
+
+    $envPath = dirname(__DIR__) . '/.env';
+    if (!is_readable($envPath)) {
+        return;
+    }
+
+    $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!is_array($lines)) {
+        return;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim((string)$line);
+        if ($line === '' || $line[0] === '#') {
+            continue;
+        }
+
+        $separatorPos = strpos($line, '=');
+        if ($separatorPos === false) {
+            continue;
+        }
+
+        $name = trim(substr($line, 0, $separatorPos));
+        $value = trim(substr($line, $separatorPos + 1));
+        if ($name === '') {
+            continue;
+        }
+
+        if (
+            strlen($value) >= 2
+            && (($value[0] === '"' && substr($value, -1) === '"') || ($value[0] === "'" && substr($value, -1) === "'"))
+        ) {
+            $value = substr($value, 1, -1);
+        }
+
+        if (getenv($name) === false) {
+            putenv($name . '=' . $value);
+            $_ENV[$name] = $value;
+            $_SERVER[$name] = $value;
+        }
+    }
+}
+
 function getCloudinaryConfig(): array
 {
+    loadProjectEnv();
+
     $config = [
-        'cloud_name' => 'dcumsgzer',
-        'api_key' => '285221998566549',
-        'api_secret' => 'p-wDqYZiSyCfYkzUN_bwXk_6F58',
+        'cloud_name' => '',
+        'api_key' => '',
+        'api_secret' => '',
         'folder' => 'qa_system/policies',
     ];
 
