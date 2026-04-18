@@ -58,7 +58,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="filter-bar">
     <div style="flex:1;min-width:200px">
         <label class="qa-form-label">Search</label>
-        <input type="text" id="f-search" class="qa-form-control" placeholder="Search indicatorsâ€¦" value="<?= htmlspecialchars($search) ?>">
+        <input type="text" id="f-search" class="qa-form-control" placeholder="Search indicators" value="<?= htmlspecialchars($search) ?>">
     </div>
     <div style="min-width:150px">
         <label class="qa-form-label">Category</label>
@@ -108,7 +108,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <td>
                         <div class="fw-600"><?= htmlspecialchars($ind['name']) ?></div>
                         <?php if ($ind['description']): ?>
-                        <div class="text-muted-qa" style="font-size:0.78rem;margin-top:2px"><?= htmlspecialchars(substr($ind['description'], 0, 80)) ?>â€¦</div>
+                        <div class="text-muted-qa" style="font-size:0.78rem;margin-top:2px"><?= htmlspecialchars(substr($ind['description'], 0, 80)) ?></div>
                         <?php endif; ?>
                     </td>
                     <td><span class="badge-status badge-pending"><?= htmlspecialchars($ind['category']) ?></span></td>

@@ -245,7 +245,45 @@ require_once __DIR__ . '/../includes/header.php';
         <h5 class="modal-title">Action Plan Details</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
+      <div id="detailsTopActions" style="padding: 12px 16px; border-bottom: 1px solid var(--border-color); background-color: var(--bg-light);"></div>
       <div class="modal-body" id="detailsBody">Loading…</div>
+      <div class="modal-footer">
+        <button type="button" class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Close Action Plan Modal -->
+<div class="modal fade" id="closeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Close Action Plan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="close_action_id">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="qa-form-label">Actual Outcome *</label>
+                <textarea id="close_actual_outcome" class="qa-form-control" rows="3" placeholder="What was actually achieved…"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="qa-form-label">Verified By *</label>
+                <input type="text" id="close_verified_by" class="qa-form-control" placeholder="Name of verifier" maxlength="100">
+            </div>
+            <div class="col-md-6">
+                <label class="qa-form-label">Actual Completion Date</label>
+                <input type="text" class="qa-form-control" value="Today (Auto-set)" disabled>
+                <small class="text-muted-qa">Date will be set to today when closed</small>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn-qa btn-qa-primary" onclick="submitClose()"><i class="bi bi-check-circle"></i> Close Action Plan</button>
+      </div>
     </div>
   </div>
 </div>
@@ -325,7 +363,7 @@ function savePlan(){
 }
 
 function viewDetails(id){
-    $("#detailsBody").html("<div class=\"text-center py-3\"><div class=\"spinner-border\" style=\"color:var(--accent)\"></div></div>");
+    $("#detailsBody").html("<div class=\\"text-center py-3\\"><div class=\\"spinner-border\\" style=\\"color:var(--accent)\\"></div></div>");
     new bootstrap.Modal(document.getElementById("detailsModal")).show();
     $.get("/qa_system/api/action_plans.php", {action:"get_details", action_id: id}, function(res){
         if(res.status === "success"){
@@ -345,11 +383,46 @@ function viewDetails(id){
                 <div class="col-12"><strong>Actual Outcome:</strong><p>${ap.actual_outcome || "—"}</p></div>
             </div>`;
             $("#detailsBody").html(html);
+            
+            let topBtn = "";
+            if(ap.status !== "Closed") {
+                topBtn = `<button class="btn-qa btn-qa-primary" onclick="openCloseModal(${ap.action_id})"><i class="bi bi-check-circle"></i> Close Plan</button>`;
+            }
+            $("#detailsTopActions").html(topBtn);
         } else {
-            $("#detailsBody").html("<p class=\"text-danger\">Error loading details</p>");
+            $("#detailsBody").html("<p class=\\"text-danger\\">Error loading details</p>");
         }
+    });
+}
+
+function openCloseModal(actionId){
+    $("#close_action_id").val(actionId);
+    $("#close_actual_outcome").val("");
+    $("#close_verified_by").val("");
+    bootstrap.Modal.getInstance(document.getElementById("detailsModal")).hide();
+    new bootstrap.Modal(document.getElementById("closeModal")).show();
+}
+
+function submitClose(){
+    const actionId = $("#close_action_id").val();
+    const outcome = $("#close_actual_outcome").val().trim();
+    const verifiedBy = $("#close_verified_by").val().trim();
+    
+    if(!outcome || !verifiedBy){
+        showToast("Please fill in actual outcome and verifier name", "error");
+        return;
+    }
+    
+    qaAjax("/qa_system/api/action_plans.php", {
+        action: "close",
+        action_id: actionId,
+        actual_outcome: outcome,
+        verified_by: verifiedBy
+    }, () => {
+        bootstrap.Modal.getInstance(document.getElementById("closeModal")).hide();
+        showToast("Action plan closed successfully", "success");
+        setTimeout(() => location.reload(), 1000);
     });
 }
 </script>';
 require_once __DIR__ . '/../includes/footer.php';
-?>
