@@ -24,9 +24,12 @@ $offset=($page-1)*$per_page;
 
 $stmt = $conn->prepare("
     SELECT r.*, s.title as survey_title,
-        (SELECT AVG(a.rating) FROM survey_answers a
+        ROUND((SELECT AVG(a.rating) FROM survey_answers a
          JOIN survey_questions q ON a.question_id=q.question_id
-         WHERE a.response_id=r.response_id AND q.question_type='rating') as avg_rating,
+         WHERE a.response_id=r.response_id 
+           AND q.question_type='rating'
+           AND a.rating IS NOT NULL
+           AND a.rating BETWEEN 1 AND 5), 1) as avg_rating,
         (SELECT COUNT(*) FROM survey_answers a WHERE a.response_id=r.response_id) as answer_count
     FROM survey_responses r
     JOIN surveys s ON r.survey_id=s.survey_id
@@ -46,13 +49,22 @@ $segWhere = ['1=1'];
 $segParams = [];
 $segTypes = '';
 if ($survey_filter) { $segWhere[] = 'sr.survey_id = ?'; $segParams[] = $survey_filter; $segTypes .= 'i'; }
+if ($role_filter) { $segWhere[] = 'sr.respondent_role = ?'; $segParams[] = $role_filter; $segTypes .= 's'; }
 
 $segSql = "SELECT
                         COALESCE(NULLIF(sr.respondent_role,''), 'Unspecified') AS respondent_role,
                         COUNT(DISTINCT sr.response_id) AS response_count,
-                        ROUND(AVG(sa.rating),2) AS avg_rating
+                        ROUND(AVG(response_avg), 1) AS avg_rating
                     FROM survey_responses sr
-                    LEFT JOIN survey_answers sa ON sa.response_id=sr.response_id AND sa.rating IS NOT NULL
+                    LEFT JOIN (
+                        SELECT sa.response_id, AVG(sa.rating) as response_avg
+                        FROM survey_answers sa
+                        JOIN survey_questions sq ON sa.question_id = sq.question_id
+                        WHERE sq.question_type = 'rating'
+                          AND sa.rating IS NOT NULL
+                          AND sa.rating BETWEEN 1 AND 5
+                        GROUP BY sa.response_id
+                    ) rating_avgs ON sr.response_id = rating_avgs.response_id
                     WHERE " . implode(' AND ', $segWhere) . "
                     GROUP BY COALESCE(NULLIF(sr.respondent_role,''), 'Unspecified')
                     ORDER BY response_count DESC, respondent_role ASC";
@@ -112,16 +124,64 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
     <div class="col-sm-4">
         <?php
-        $avg_q = $conn->query("SELECT AVG(rating) as avg FROM survey_answers WHERE rating IS NOT NULL")->fetch_assoc()['avg'];
+        $avg_where = ['1=1'];
+        $avg_params = [];
+        $avg_types = '';
+        if ($survey_filter) {
+            $avg_where[] = 'sq.survey_id = ?';
+            $avg_params[] = $survey_filter;
+            $avg_types .= 'i';
+        }
+        if ($role_filter) {
+            $avg_where[] = 'sr.respondent_role = ?';
+            $avg_params[] = $role_filter;
+            $avg_types .= 's';
+        }
+        $avg_sql = "SELECT AVG(response_avg) as avg FROM (
+                    SELECT AVG(sa.rating) as response_avg
+                    FROM survey_answers sa
+                    JOIN survey_questions sq ON sa.question_id = sq.question_id
+                    JOIN survey_responses sr ON sa.response_id = sr.response_id
+                    WHERE " . implode(' AND ', $avg_where) . " 
+                      AND sq.question_type = 'rating'
+                      AND sa.rating IS NOT NULL
+                      AND sa.rating BETWEEN 1 AND 5
+                    GROUP BY sa.response_id
+                ) t";
+        $avg_stmt = $conn->prepare($avg_sql);
+        if ($avg_types) {
+            $avg_stmt->bind_param($avg_types, ...$avg_params);
+        }
+        $avg_stmt->execute();
+        $avg_q = $avg_stmt->get_result()->fetch_assoc()['avg'];
         ?>
         <div class="stat-card">
             <div class="stat-icon amber"><i class="bi bi-star-half"></i></div>
-            <div><div class="stat-value"><?= $avg_q ? number_format($avg_q,2) : 'N/A' ?></div><div class="stat-label">Avg Rating</div></div>
+            <div><div class="stat-value"><?= $avg_q ? number_format($avg_q,1) : 'N/A' ?></div><div class="stat-label">Avg Rating</div></div>
         </div>
     </div>
     <div class="col-sm-4">
         <?php
-        $today_count = $conn->query("SELECT COUNT(*) as c FROM survey_responses WHERE DATE(submitted_at)=CURDATE()")->fetch_assoc()['c'];
+        $today_where = ['DATE(sr.submitted_at) = CURDATE()'];
+        $today_params = [];
+        $today_types = '';
+        if ($survey_filter) {
+            $today_where[] = 'sr.survey_id = ?';
+            $today_params[] = $survey_filter;
+            $today_types .= 'i';
+        }
+        if ($role_filter) {
+            $today_where[] = 'sr.respondent_role = ?';
+            $today_params[] = $role_filter;
+            $today_types .= 's';
+        }
+        $today_sql = "SELECT COUNT(*) as c FROM survey_responses sr WHERE " . implode(' AND ', $today_where);
+        $today_stmt = $conn->prepare($today_sql);
+        if ($today_types) {
+            $today_stmt->bind_param($today_types, ...$today_params);
+        }
+        $today_stmt->execute();
+        $today_count = $today_stmt->get_result()->fetch_assoc()['c'];
         ?>
         <div class="stat-card">
             <div class="stat-icon green"><i class="bi bi-calendar-check"></i></div>
@@ -159,8 +219,8 @@ require_once __DIR__ . '/../includes/header.php';
                         <span class="text-muted-qa mono" style="margin-left:8px"><?= $share ?>%</span>
                     </td>
                     <td>
-                        <?php if (!empty($seg['avg_rating'])): ?>
-                        <span class="fw-600" style="color:var(--warning)"><i class="bi bi-star-fill"></i> <?= number_format((float)$seg['avg_rating'], 2) ?></span>
+                        <?php if (!empty($seg['avg_rating']) && $seg['avg_rating'] >= 1 && $seg['avg_rating'] <= 5): ?>
+                        <span class="fw-600" style="color:var(--warning)"><i class="bi bi-star-fill"></i> <?= number_format((float)$seg['avg_rating'], 1) ?></span>
                         <?php else: ?>
                         <span class="text-muted-qa">N/A</span>
                         <?php endif; ?>

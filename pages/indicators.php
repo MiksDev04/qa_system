@@ -127,6 +127,11 @@ require_once __DIR__ . '/../includes/header.php';
                                 <i class="bi bi-eye"></i>
                             </button>
                             <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon"
+                                onclick='viewAnalytics(<?= $ind['indicator_id'] ?>, "<?= htmlspecialchars($ind['name']) ?>")'
+                                title="Analytics">
+                                <i class="bi bi-graph-up"></i>
+                            </button>
+                            <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon"
                                 onclick='editIndicator(<?= json_encode($ind) ?>)'
                                 title="Edit">
                                 <i class="bi bi-pencil"></i>
@@ -261,11 +266,123 @@ require_once __DIR__ . '/../includes/header.php';
   </div>
 </div>
 
+<!-- Analytics Modal -->
+<div class="modal fade" id="analyticsModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="analyticsTitle">Analytics & Insights</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="max-height:75vh;overflow-y:auto;">
+        <!-- Loading Indicator -->
+        <div id="analyticsLoading" class="text-center" style="display:none;padding:40px">
+          <div class="spinner-border text-accent" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        
+        <!-- Analytics Content -->
+        <div id="analyticsContent" style="display:none;">
+          <!-- Time Series Chart -->
+          <div class="qa-card mb-4">
+            <div class="qa-card-header">
+              <h6 class="mb-0"><i class="bi bi-graph-up me-2 text-accent"></i>Time-Series Analysis</h6>
+            </div>
+            <div style="padding:20px;">
+              <canvas id="timeSeriesChart" style="max-height:250px;"></canvas>
+              <p class="text-muted-qa mt-3 mb-0" id="timeSeriesInfo" style="font-size:0.85rem;"></p>
+            </div>
+          </div>
+
+          <!-- Trend Analysis & Forecasting (Side by Side) -->
+          <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+              <div class="qa-card h-100">
+                <div class="qa-card-header">
+                  <h6 class="mb-0"><i class="bi bi-arrow-up me-2 text-accent"></i>Trend Analysis</h6>
+                </div>
+                <div style="padding:20px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                    <div style="padding:10px;background:var(--bg-secondary);border-radius:6px;">
+                      <p class="text-muted-qa mb-2" style="font-size:0.8rem;font-weight:500;">Direction</p>
+                      <p id="trendDirection" class="fw-600" style="font-size:1.3rem;margin:0;"></p>
+                    </div>
+                    <div style="padding:10px;background:var(--bg-secondary);border-radius:6px;">
+                      <p class="text-muted-qa mb-2" style="font-size:0.8rem;font-weight:500;">% Change</p>
+                      <p id="trendPercent" class="fw-600" style="font-size:1.3rem;margin:0;"></p>
+                    </div>
+                    <div style="padding:10px;background:var(--bg-secondary);border-radius:6px;">
+                      <p class="text-muted-qa mb-2" style="font-size:0.8rem;font-weight:500;">Previous</p>
+                      <p id="trendOldest" class="mono" style="font-size:0.9rem;margin:0;"></p>
+                    </div>
+                    <div style="padding:10px;background:var(--bg-secondary);border-radius:6px;">
+                      <p class="text-muted-qa mb-2" style="font-size:0.8rem;font-weight:500;">Latest</p>
+                      <p id="trendNewest" class="mono" style="font-size:0.9rem;margin:0;"></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Forecasting -->
+            <div class="col-lg-6">
+              <div class="qa-card h-100">
+                <div class="qa-card-header">
+                  <h6 class="mb-0"><i class="bi bi-crystal-ball me-2 text-accent"></i>Forecast (Next 3 Periods)</h6>
+                </div>
+                <div style="padding:20px;">
+                  <div id="forecastContent">
+                    <p class="text-muted-qa text-center" style="font-size:0.9rem;margin:0;">Loading forecast...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benchmark Comparison -->
+          <div class="qa-card">
+            <div class="qa-card-header">
+              <h6 class="mb-0"><i class="bi bi-bullseye me-2 text-accent"></i>Benchmark Comparison (<span id="benchmarkCategoryName">Category</span> Average)</h6>
+            </div>
+            <div style="padding:20px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:20px;">
+                <div style="text-align:center;padding:15px;background:var(--bg-secondary);border-radius:var(--radius);">
+                  <p class="text-muted-qa mb-1" style="font-size:0.8rem;font-weight:500;">Your Value</p>
+                  <p id="benchmarkCurrent" class="fw-600" style="font-size:1.4rem;margin:0;"></p>
+                </div>
+                <div style="text-align:center;padding:15px;background:var(--bg-secondary);border-radius:var(--radius);">
+                  <p class="text-muted-qa mb-1" style="font-size:0.8rem;font-weight:500;">Category Average</p>
+                  <p id="benchmarkAverage" class="fw-600" style="font-size:1.4rem;margin:0;"></p>
+                </div>
+                <div style="text-align:center;padding:15px;background:var(--bg-secondary);border-radius:var(--radius);">
+                  <p class="text-muted-qa mb-1" style="font-size:0.8rem;font-weight:500;">Difference</p>
+                  <p id="benchmarkDiff" class="fw-600" style="font-size:1.4rem;margin:0;"></p>
+                </div>
+              </div>
+              <div id="benchmarkTable" style="overflow-x:auto;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="analyticsError" class="alert alert-warning" style="display:none;">
+          <p id="analyticsErrorMsg" class="mb-0;"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <?php
 $cp = $page; $tp = $total_pages;
 $extra_js = '<script>
 const currentPage = ' . $cp . ';
 const totalPages  = ' . $tp . ';
+let timeSeriesChart = null;
 
 $(function(){
     buildPagination("paginationContainer", currentPage, totalPages, "goPage");
@@ -309,12 +426,148 @@ function viewIndicator(data) {
     $("#view_ind_category").text(data.category);
     $("#view_ind_target").text(data.target_value + " " + data.unit);
     $("#view_ind_unit").text(data.unit);
-    $("#view_ind_desc").text(data.description || "â€”");
+    $("#view_ind_desc").text(data.description || "-");
     const statusBadge = data.status === "Active" ? "<span class=\"badge-status badge-active\">Active</span>" : "<span class=\"badge-status badge-inactive\">Inactive</span>";
     $("#view_ind_status").html(statusBadge);
     const dateStr = new Date(data.created_at).toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"});
     $("#view_ind_created").text(dateStr);
     new bootstrap.Modal(document.getElementById("viewIndModal")).show();
+}
+
+function viewAnalytics(indicatorId, indicatorName) {
+    $("#analyticsTitle").text("Analytics & Insights: " + indicatorName);
+    $("#analyticsLoading").show();
+    $("#analyticsContent").hide();
+    $("#analyticsError").hide();
+    new bootstrap.Modal(document.getElementById("analyticsModal")).show();
+
+    Promise.all([
+        fetch("/qa_system/api/analytics.php?action=timeseries&indicator_id=" + indicatorId).then(r => r.json()),
+        fetch("/qa_system/api/analytics.php?action=trend&indicator_id=" + indicatorId).then(r => r.json()),
+        fetch("/qa_system/api/analytics.php?action=forecast&indicator_id=" + indicatorId).then(r => r.json()),
+        fetch("/qa_system/api/analytics.php?action=benchmark&indicator_id=" + indicatorId).then(r => r.json())
+    ]).then(([tsData, trendData, forecastData, benchData]) => {
+        $("#analyticsLoading").hide();
+        console.log("Analytics responses:", {ts: tsData, trend: trendData, forecast: forecastData, bench: benchData});
+        
+        if (!tsData.status || tsData.status !== "success") {
+            $("#analyticsError").show();
+            $("#analyticsErrorMsg").text("Failed to load time-series data: " + (tsData.message || "Unknown error"));
+            return;
+        }
+        $("#analyticsContent").show();
+        renderTimeSeriesChart(tsData.data, tsData.indicator);
+        renderTrendAnalysis(trendData);
+        renderForecast(forecastData);
+        renderBenchmark(benchData);
+    }).catch(err => {
+        console.error("Analytics error:", err);
+        $("#analyticsLoading").hide();
+        $("#analyticsError").show();
+        $("#analyticsErrorMsg").text("Error loading analytics data: " + err.message);
+    });
+}
+
+function renderTimeSeriesChart(data, indicator) {
+    if (!data || data.length === 0) {
+        $("#timeSeriesInfo").text("No historical data available");
+        return;
+    }
+    const labels = data.map(d => d.year + " " + (d.semester === "Annual" ? "Annual" : d.semester + " Sem"));
+    const values = data.map(d => parseFloat(d.actual_value));
+    const target = parseFloat(indicator.target_value);
+    const ctx = document.getElementById("timeSeriesChart").getContext("2d");
+    if (timeSeriesChart) timeSeriesChart.destroy();
+    timeSeriesChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Actual Value",
+                    data: values,
+                    borderColor: "var(--primary)",
+                    backgroundColor: "rgba(76, 175, 80, 0.1)",
+                    borderWidth: 2,
+                    fill: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: "var(--primary)"
+                },
+                {
+                    label: "Target",
+                    data: Array(labels.length).fill(target),
+                    borderColor: "#FFC107",
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { position: "top" } },
+            scales: { y: { beginAtZero: false } }
+        }
+    });
+    $("#timeSeriesInfo").text("Showing " + data.length + " records. Latest: " + values[values.length - 1] + " " + indicator.unit);
+}
+
+function renderTrendAnalysis(data) {
+    if (data.status !== "success" || !data.trend) {
+        $("#trendDirection").text("-");
+        $("#trendPercent").text("-");
+        $("#trendOldest").text("No data");
+        $("#trendNewest").text("No data");
+        return;
+    }
+    const trendIcon = data.trend === "up" ? "📈" : (data.trend === "down" ? "📉" : "→");
+    const color = data.trend === "up" ? "color:green" : (data.trend === "down" ? "color:red" : "");
+    $("#trendDirection").html("<span style=\"" + color + "\">" + trendIcon + " " + data.trend.toUpperCase() + "</span>");
+    $("#trendPercent").html("<span style=\"" + color + "\">" + (data.percent_change > 0 ? "+" : "") + data.percent_change + "%</span>");
+    $("#trendOldest").text(data.oldest_value);
+    $("#trendNewest").text(data.newest_value);
+}
+
+function renderForecast(data) {
+    if (data.status !== "success" || !data.forecast || data.forecast.length === 0) {
+        $("#forecastContent").html("<p class=\"text-muted-qa text-center mb-0\">Insufficient data for forecasting</p>");
+        return;
+    }
+    let html = "<table class=\"table table-sm\" style=\"margin-bottom:0\"><thead><tr><th>Period</th><th>Predicted Value</th></tr></thead><tbody>";
+    data.forecast.forEach(f => {
+        html += "<tr><td>+"+f.period+"</td><td class=\"fw-600\">"+f.predicted_value+"</td></tr>";
+    });
+    html += "</tbody></table>";
+    $("#forecastContent").html(html);
+}
+
+function renderBenchmark(data) {
+    if (data.status !== "success") {
+        $("#benchmarkTable").html("<p class=\"text-muted-qa\">Unable to load benchmark data</p>");
+        return;
+    }
+    // Set category name in header
+    $("#benchmarkCategoryName").text(data.category || "Category");
+    
+    $("#benchmarkCurrent").text(data.current_value !== null ? data.current_value : "-");
+    $("#benchmarkAverage").text(data.category_average !== null ? data.category_average : "-");
+    let diffText = "-";
+    if (data.performance_vs_category !== null) {
+        const sign = data.performance_vs_category > 0 ? "+" : "";
+        diffText = "<span style=\"color:" + (data.performance_vs_category > 0 ? "green" : "red") + "\">" + sign + data.performance_vs_category + "</span>";
+    }
+    $("#benchmarkDiff").html(diffText);
+    if (data.benchmarks && data.benchmarks.length > 0) {
+        let html = "<table class=\"table table-sm\"><thead><tr><th>Indicator</th><th>Target</th><th>Actual</th><th>Performance</th></tr></thead><tbody>";
+        data.benchmarks.forEach(b => {
+            const perf = b.actual !== null ? ((b.actual / b.target) * 100).toFixed(1) : "-";
+            html += "<tr><td>" + b.name + "</td><td class=\"mono\">" + b.target + "</td><td class=\"mono\">" + (b.actual !== null ? b.actual : "-") + "</td><td class=\"mono\">" + perf + "%</td></tr>";
+        });
+        html += "</tbody></table>";
+        $("#benchmarkTable").html(html);
+    }
 }
 
 function saveIndicator() {

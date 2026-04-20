@@ -83,6 +83,12 @@ This Quality Assurance (QA) Management System helps manage and monitor the quali
 - Change descriptions
 - Deactivate old metrics
 
+📈 **Advanced Analytics** (NEW!)
+- **Time-Series Chart**: Visualize how your indicator has changed over time with actual vs target comparison
+- **Trend Analysis**: Understand direction (up/down/stable) and percentage change from oldest to newest record
+- **Forecasting**: Simple linear regression to predict next 2-5 periods based on historical data
+- **Benchmark Comparison**: Compare your indicator against category average and see how you rank
+
 📈 **Example Indicators**:
 - Board Exam Passing Rate (target: 80%)
 - Graduation Rate (target: 75%)
@@ -90,7 +96,7 @@ This Quality Assurance (QA) Management System helps manage and monitor the quali
 - Faculty Evaluation (target: 85%)
 - Research Output (target: 10 per year)
 
-**Why Use It**: Define what success looks like for your institution
+**Why Use It**: Define what success looks like for your institution + gain deep insights into performance trends and patterns
 
 ---
 
@@ -481,6 +487,7 @@ This Quality Assurance (QA) Management System helps manage and monitor the quali
 |---------|-------------|-------|
 | **Dashboard** | Shows everything at a glance | Home page |
 | **Indicators** | Define what to measure | Quality Data section |
+| **Analytics** | Time-series, trends, forecasting, benchmarks | Indicator details |
 | **Records** | Record actual performance | Quality Data section |
 | **Surveys** | Collect feedback | Surveys section |
 | **Standards** | Store requirements | Governance section |
@@ -491,7 +498,55 @@ This Quality Assurance (QA) Management System helps manage and monitor the quali
 
 ---
 
-## 🚀 Getting Started
+## � Advanced Analytics & Insights (Performance Indicators)
+
+The Indicators page now includes powerful analytics tools to understand performance trends and make data-driven decisions.
+
+### **How to Access Analytics**
+1. Go to KPI Indicators page
+2. Click the **📈 Analytics** button (graph icon) in the actions column
+3. View comprehensive insights in the Analytics modal
+
+### **What Analytics Show You**
+
+**1. Time-Series Chart**
+- Shows all historical data points for the indicator
+- Displays both actual values and target line
+- Helps identify patterns and trends visually
+- Useful for presentations and reports
+
+**2. Trend Analysis**
+- **Trend Direction**: Up (📈), Down (📉), or Stable (→)
+- **Percentage Change**: How much has the indicator changed?
+- **Previous Value**: Starting point of trend
+- **Latest Value**: Current performance
+- Color-coded: Green for improvement, Red for decline
+
+**3. Forecasting** (Simple Linear Regression)
+- Predicts next 2-5 periods based on historical data
+- Uses linear regression algorithm
+- Shows "Insufficient data" if fewer than 2 historical records
+- Requires: At least 2 data points to generate forecast
+
+**4. Benchmark Comparison** (Category-Based)
+- **Your Value**: Latest recorded value for this indicator
+- **Category Average**: Average of all indicators in the same category
+- **Difference**: How you compare (positive = above average, negative = below)
+- **Category Rankings**: Table showing all similar indicators in your category
+- Helps identify competitive positioning within your institution
+
+### **Example Analytics Usage**
+
+**Scenario: Board Exam Pass Rate**
+- Time-Series shows: 70% → 75% → 78% → 80% (improving trend)
+- Trend Analysis: UP ↑ +14.3% change
+- Forecast: Next 2 periods predicted at 82%, 84%
+- Benchmark: Your 80% vs Category Average 76% (you're performing +4% above average)
+- **Action**: Continue current strategy, set target to 85%
+
+---
+
+## �🚀 Getting Started
 
 1. **Set Up Foundation**
    - Add Standards & Policies (CHED, ISO)
@@ -525,6 +580,16 @@ This Quality Assurance (QA) Management System helps manage and monitor the quali
 - Focus on what matters most (graduation rate, pass rate, satisfaction)
 - Use realistic targets
 - Review and adjust targets annually
+- **Use Analytics to**: Identify trends, forecast future performance, benchmark against peers
+- Record data regularly (at least annually, preferably per semester) to enable trend analysis
+- Need at least 2 data points for trends and forecasts to work
+
+**Analytics Tips**:
+- Check trends quarterly to catch issues early
+- Use forecasts to plan improvement initiatives
+- Compare with benchmarks to understand if you need to improve
+- Time-series charts are great for presentations to leadership
+- If forecast shows declining trend, create action plan early
 
 **Survey Tips**:
 - Keep surveys short (5-10 questions)
@@ -536,6 +601,7 @@ This Quality Assurance (QA) Management System helps manage and monitor the quali
 - Set realistic deadlines
 - Track progress regularly
 - Verify effectiveness
+- Use analytics to set evidence-based targets
 
 **Report Tips**:
 - Generate monthly for tracking

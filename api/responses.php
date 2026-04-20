@@ -46,13 +46,15 @@ switch ($action) {
         $survey_id = (int)($_GET['survey_id'] ?? 0);
         if (!$survey_id) respond(false, 'Survey ID required.');
 
-        // Rating averages per question
+        // Rating averages per question (only for rating-type questions with valid ratings)
         $stmt = $conn->prepare("
             SELECT sq.question_id, sq.question_text, sq.question_type,
                    AVG(sa.rating) as avg_rating, COUNT(sa.answer_id) as total
             FROM survey_questions sq
-            LEFT JOIN survey_answers sa ON sq.question_id=sa.question_id
-            WHERE sq.survey_id=?
+            LEFT JOIN survey_answers sa ON sq.question_id=sa.question_id 
+                AND sa.rating IS NOT NULL 
+                AND sa.rating BETWEEN 1 AND 5
+            WHERE sq.survey_id=? AND sq.question_type='rating'
             GROUP BY sq.question_id
             ORDER BY sq.sort_order
         ");
@@ -79,9 +81,17 @@ switch ($action) {
         $sql = "SELECT
                     COALESCE(NULLIF(sr.respondent_role, ''), 'Unspecified') AS respondent_role,
                     COUNT(DISTINCT sr.response_id) AS response_count,
-                    ROUND(AVG(sa.rating), 2) AS avg_rating
+                    ROUND(AVG(response_avg), 1) AS avg_rating
                 FROM survey_responses sr
-                LEFT JOIN survey_answers sa ON sa.response_id = sr.response_id AND sa.rating IS NOT NULL
+                LEFT JOIN (
+                    SELECT sa.response_id, AVG(sa.rating) as response_avg
+                    FROM survey_answers sa
+                    JOIN survey_questions sq ON sa.question_id = sq.question_id
+                    WHERE sq.question_type = 'rating'
+                      AND sa.rating IS NOT NULL
+                      AND sa.rating BETWEEN 1 AND 5
+                    GROUP BY sa.response_id
+                ) rating_avgs ON sr.response_id = rating_avgs.response_id
                 WHERE " . implode(' AND ', $where) . "
                 GROUP BY COALESCE(NULLIF(sr.respondent_role, ''), 'Unspecified')
                 ORDER BY response_count DESC, respondent_role ASC";
