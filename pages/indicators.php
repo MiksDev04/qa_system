@@ -153,7 +153,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Pagination info -->
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>â€“<?= min($offset+$per_page,$total) ?> of <?= $total ?> indicators</span>
+    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>-<?= min($offset+$per_page,$total) ?> of <?= $total ?> indicators</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -573,7 +573,7 @@ function renderBenchmark(data) {
 function saveIndicator() {
     const name = $("#ind_name").val().trim();
     const target = $("#ind_target").val().trim();
-    if (!name || !target) { showToast("Name and Target are required.", "error"); return; }
+    if (!name || !target) { alert("Name and Target are required."); return; }
 
     qaAjax("/qa_system/api/indicators.php", {
         action: $("#ind_id").val() ? "update" : "create",

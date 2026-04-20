@@ -180,7 +180,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>â€“<?= min($offset+$per_page,$total) ?> of <?= $total ?> records</span>
+    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>-<?= min($offset+$per_page,$total) ?> of <?= $total ?> records</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -226,7 +226,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
             <div class="col-12">
                 <label class="qa-form-label">Remarks</label>
-                <textarea id="rec_remarks" class="qa-form-control" rows="3" placeholder="Notes or observationsâ€¦"></textarea>
+                <textarea id="rec_remarks" class="qa-form-control" rows="3" placeholder="Notes or observations"></textarea>
             </div>
         </div>
       </div>
@@ -366,7 +366,7 @@ function saveRecord(){
     const indicator_id = $("#rec_indicator").val();
     const actual_value = $("#rec_actual").val();
     const year = $("#rec_year").val();
-    if(!indicator_id || !actual_value || !year){ showToast("Indicator, Year, and Actual Value are required.","error"); return; }
+    if(!indicator_id || !actual_value || !year){ alert("Indicator, Year, and Actual Value are required."); return; }
 
     qaAjax("/qa_system/api/records.php", {
         action: $("#rec_id").val() ? "update" : "create",
@@ -376,7 +376,7 @@ function saveRecord(){
         actual_value,
         recorded_by: $("#rec_by").val(),
         remarks: $("#rec_remarks").val()
-    }, () => location.reload());
+    }, () => { location.reload(); });
 }
 
 function deleteRecord(id){

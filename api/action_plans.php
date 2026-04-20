@@ -175,6 +175,22 @@ if ($action === 'create') {
         $rows[] = $row;
     }
     respond(true, 'OK', ['data' => $rows]);
+} elseif ($action === 'delete') {
+    $id = (int)($_POST['action_id'] ?? 0);
+    if (!$id) {
+        http_response_code(400);
+        respond(false, 'Action ID is required');
+    }
+
+    $stmt = $conn->prepare('DELETE FROM qa_action_plans WHERE action_id=?');
+    $stmt->bind_param('i', $id);
+
+    if ($stmt->execute()) {
+        respond(true, 'Action plan deleted');
+    } else {
+        http_response_code(500);
+        respond(false, 'Failed to delete action plan');
+    }
 } else {
     http_response_code(400);
     respond(false, 'Invalid action');

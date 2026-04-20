@@ -173,22 +173,49 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
 
         <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:20px">
-            <!-- Questions builder -->
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <div>
-                    <div style="font-weight:600;font-size:1rem;margin-bottom:4px">Questionnaires</div>
-                    <div class="text-muted-qa" style="font-size:0.85rem">Add questions for your survey below</div>
+            <!-- Respondent Info Settings -->
+            <div style="margin-bottom:20px">
+                <div style="font-weight:600;font-size:1rem;margin-bottom:12px">Respondent Information</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border)">
+                            <input type="checkbox" id="sv_require_name" style="cursor:pointer;width:18px;height:18px">
+                            <label style="margin:0;cursor:pointer;flex:1">
+                                <strong>Require Respondent Name</strong>
+                                <div class="text-muted-qa" style="font-size:0.8rem;margin-top:2px">Ask respondents to provide their name</div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border)">
+                            <input type="checkbox" id="sv_require_email" style="cursor:pointer;width:18px;height:18px">
+                            <label style="margin:0;cursor:pointer;flex:1">
+                                <strong>Require Email Address</strong>
+                                <div class="text-muted-qa" style="font-size:0.8rem;margin-top:2px">Ask respondents to provide their email</div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
-                <button class="btn-qa btn-qa-primary btn-qa-sm" onclick="addQuestion()" style="white-space:nowrap">
-                    <i class="bi bi-plus-circle"></i> Add Question
-                </button>
             </div>
 
-            <div id="questionsList" style="max-height:400px;overflow-y:auto;padding-right:8px"></div>
-            <div id="noQuestionsMsg" class="empty-state" style="padding:40px;border:2px dashed var(--accent);border-radius:var(--radius);text-align:center">
-                <i class="bi bi-question-circle" style="font-size:2rem;color:var(--accent);opacity:0.3"></i>
-                <p style="margin-top:12px;color:var(--accent);opacity:0.5">No questions added yet</p>
-                <p style="font-size:0.8rem;color:var(--accent);opacity:0.4">Click "Add Question" to create your first question</p>
+            <div style="border-top:1px solid var(--border);padding-top:20px">
+                <!-- Questions builder -->
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <div style="font-weight:600;font-size:1rem;margin-bottom:4px">Questionnaires</div>
+                        <div class="text-muted-qa" style="font-size:0.85rem">Add questions for your survey below</div>
+                    </div>
+                    <button class="btn-qa btn-qa-primary btn-qa-sm" onclick="addQuestion()" style="white-space:nowrap">
+                        <i class="bi bi-plus-circle"></i> Add Question
+                    </button>
+                </div>
+
+                <div id="questionsList" style="max-height:400px;overflow-y:auto;padding-right:8px"></div>
+                <div id="noQuestionsMsg" class="empty-state" style="padding:40px;border:2px dashed var(--accent);border-radius:var(--radius);text-align:center">
+                    <i class="bi bi-question-circle" style="font-size:2rem;color:var(--accent);opacity:0.3"></i>
+                    <p style="margin-top:12px;color:var(--accent);opacity:0.5">No questions added yet</p>
+                    <p style="font-size:0.8rem;color:var(--accent);opacity:0.4">Click "Add Question" to create your first question</p>
+                </div>
             </div>
         </div>
       </div>
@@ -248,6 +275,8 @@ function openAddSurvey(){
     $("#sv_id,#sv_title,#sv_desc,#sv_start,#sv_end").val("");
     $("#sv_audience").val("General");
     $("#sv_status").val("Draft");
+    $("#sv_require_name").prop("checked", false);
+    $("#sv_require_email").prop("checked", false);
     $("#questionsList").empty();
     $("#noQuestionsMsg").show();
     questionCounter = 0;
@@ -262,6 +291,8 @@ function editSurvey(data){
     $("#sv_status").val(data.status);
     $("#sv_start").val(data.start_date);
     $("#sv_end").val(data.end_date);
+    $("#sv_require_name").prop("checked", data.require_name ? true : false);
+    $("#sv_require_email").prop("checked", data.require_email ? true : false);
     // Load existing questions
     $("#questionsList").empty();
     $("#noQuestionsMsg").show();
@@ -328,13 +359,13 @@ function removeQuestion(id){
 
 function saveSurvey(){
     const title = $("#sv_title").val().trim();
-    if(!title){ showToast("Survey title is required.","error"); return; }
+    if(!title){ alert("Survey title is required."); return; }
 
     const questions = [];
     let valid = true;
     $("#questionsList .qa-card").each(function(i){
         const text = $(this).find(".q-text").val().trim();
-        if(!text){ showToast("All questions must have text.","error"); valid=false; return false; }
+        if(!text){ alert("All questions must have text."); valid=false; return false; }
         const type = $(this).find(".q-type").val();
         let choices = null;
         if(type === "multiple_choice"){
@@ -361,10 +392,12 @@ function saveSurvey(){
         status: $("#sv_status").val(),
         start_date: $("#sv_start").val(),
         end_date: $("#sv_end").val(),
+        require_name: $("#sv_require_name").is(":checked") ? 1 : 0,
+        require_email: $("#sv_require_email").is(":checked") ? 1 : 0,
         questions: JSON.stringify(questions)
     };
 
-    qaAjax("/qa_system/api/surveys.php", payload, () => location.reload());
+    qaAjax("/qa_system/api/surveys.php", payload, () => { location.reload(); });
 }
 
 function viewQuestions(surveyId, title){

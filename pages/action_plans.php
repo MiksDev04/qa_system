@@ -140,6 +140,9 @@ require_once __DIR__ . '/../includes/header.php';
             <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick='editPlan(<?= json_encode($ap) ?>)'>
                 <i class="bi bi-pencil"></i> Edit
             </button>
+            <button class="btn-qa btn-qa-danger btn-qa-sm" onclick="deletePlan(<?= $ap['action_id'] ?>)">
+                <i class="bi bi-trash"></i> Delete
+            </button>
         </div>
     </div>
 </div>
@@ -348,7 +351,7 @@ function savePlan(){
     const title = $("#ap_title").val().trim();
     const assigned = $("#ap_assigned").val().trim();
     const target = $("#ap_target").val();
-    if(!title || !assigned || !target){ showToast("Required fields missing","error"); return; }
+    if(!title || !assigned || !target){ alert("Required fields missing"); return; }
 
     qaAjax("/qa_system/api/action_plans.php", {
         action: $("#ap_id").val() ? "update" : "create",
@@ -359,7 +362,7 @@ function savePlan(){
         assigned_to: assigned, assigned_to_email: $("#ap_email").val(),
         department: $("#ap_dept").val(), target_date: target,
         expected_outcome: $("#ap_outcome").val()
-    }, () => location.reload());
+    }, () => { location.reload(); });
 }
 
 function viewDetails(id){
@@ -409,7 +412,7 @@ function submitClose(){
     const verifiedBy = $("#close_verified_by").val().trim();
     
     if(!outcome || !verifiedBy){
-        showToast("Please fill in actual outcome and verifier name", "error");
+        alert("Please fill in actual outcome and verifier name");
         return;
     }
     
@@ -420,9 +423,12 @@ function submitClose(){
         verified_by: verifiedBy
     }, () => {
         bootstrap.Modal.getInstance(document.getElementById("closeModal")).hide();
-        showToast("Action plan closed successfully", "success");
-        setTimeout(() => location.reload(), 1000);
+        location.reload();
     });
+}
+
+function deletePlan(id) {
+    confirmDelete(\"/qa_system/api/action_plans.php\", {action:\"delete\", action_id: id}, () => location.reload());
 }
 </script>';
 require_once __DIR__ . '/../includes/footer.php';

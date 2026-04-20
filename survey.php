@@ -22,6 +22,9 @@ if (!isset($_SESSION['survey_submitted'])) {
 if (!isset($_SESSION['survey_form_nonce'])) {
     $_SESSION['survey_form_nonce'] = [];
 }
+if (!isset($_SESSION['survey_settings'])) {
+    $_SESSION['survey_settings'] = [];
+}
 
 if (!$token) { $error = 'Invalid survey link. No token provided.'; }
 else {
@@ -191,15 +194,18 @@ if ($requestMethod === 'POST' && $survey && !$error && !$submitted) {
 
         <!-- Respondent info -->
         <div class="qa-card mb-4" style="padding:18px">
-            <div class="qa-card-title mb-3">About You (Optional)</div>
+            <div class="qa-card-title mb-3">About You<?php 
+                $require_name = isset($_SESSION['survey_settings'][$survey['survey_id']]['require_name']) ? $_SESSION['survey_settings'][$survey['survey_id']]['require_name'] : false;
+                $require_email = isset($_SESSION['survey_settings'][$survey['survey_id']]['require_email']) ? $_SESSION['survey_settings'][$survey['survey_id']]['require_email'] : false;
+            ?></div>
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="qa-form-label">Your Name</label>
-                    <input type="text" name="respondent_name" class="qa-form-control" placeholder="Anonymous" value="<?= htmlspecialchars($_POST['respondent_name']??'') ?>">
+                    <label class="qa-form-label">Your Name<?= $require_name ? ' <span style="color:var(--danger)">*</span>' : ' (optional)' ?></label>
+                    <input type="text" name="respondent_name" class="qa-form-control" placeholder="<?= $require_name ? 'Required' : 'Anonymous' ?>" value="<?= htmlspecialchars($_POST['respondent_name']??'') ?>" <?= $require_name ? 'required' : '' ?>>
                 </div>
                 <div class="col-md-6">
-                    <label class="qa-form-label">Email (optional)</label>
-                    <input type="email" name="respondent_email" class="qa-form-control" placeholder="your@email.com" value="<?= htmlspecialchars($_POST['respondent_email']??'') ?>">
+                    <label class="qa-form-label">Email<?= $require_email ? ' <span style="color:var(--danger)">*</span>' : ' (optional)' ?></label>
+                    <input type="email" name="respondent_email" class="qa-form-control" placeholder="<?= $require_email ? 'Required' : 'your@email.com' ?>" value="<?= htmlspecialchars($_POST['respondent_email']??'') ?>" <?= $require_email ? 'required' : '' ?>>
                 </div>
                 <div class="col-md-6">
                     <label class="qa-form-label">I am a…</label>

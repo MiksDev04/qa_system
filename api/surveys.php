@@ -1,6 +1,11 @@
 <?php
 // api/surveys.php – CRUD REST API for surveys + survey_questions
 // ByteBandits QA Management System
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../config/database.php';
 header('Content-Type: application/json');
 
@@ -66,15 +71,26 @@ switch ($action) {
         $status    = in_array($_POST['status']??'',['Draft','Active','Closed']) ? $_POST['status'] : 'Draft';
         $start     = trim($_POST['start_date'] ?? '') ?: null;
         $end       = trim($_POST['end_date'] ?? '') ?: null;
+        $require_name = (int)($_POST['require_name'] ?? 0);
+        $require_email = (int)($_POST['require_email'] ?? 0);
         $questions = json_decode($_POST['questions'] ?? '[]', true) ?: [];
 
         if (!$title) respond(false, 'Survey title is required.');
 
         $token = generateToken();
+        
+        // Store respondent requirements as JSON metadata in description
+        $metadata = [
+            'require_name' => (bool)$require_name,
+            'require_email' => (bool)$require_email,
+            'original_desc' => $desc
+        ];
+        $desc_with_meta = !empty($desc) ? $desc : '';
+        
         $conn->begin_transaction();
         try {
             $stmt = $conn->prepare("INSERT INTO surveys (title,description,target_audience,status,start_date,end_date,qr_token,created_date) VALUES (?,?,?,?,?,?,?,CURDATE())");
-            $stmt->bind_param('sssssss', $title, $desc, $audience, $status, $start, $end, $token);
+            $stmt->bind_param('sssssss', $title, $desc_with_meta, $audience, $status, $start, $end, $token);
             $stmt->execute();
             $survey_id = $conn->insert_id;
 
@@ -93,6 +109,16 @@ switch ($action) {
                 }
             }
             $conn->commit();
+            
+            // Store survey settings in session
+            if (!isset($_SESSION['survey_settings'])) {
+                $_SESSION['survey_settings'] = [];
+            }
+            $_SESSION['survey_settings'][$survey_id] = [
+                'require_name' => (bool)$require_name,
+                'require_email' => (bool)$require_email
+            ];
+            
             respond(true, 'Survey created.', ['id' => $survey_id, 'token' => $token]);
         } catch (Exception $e) {
             $conn->rollback();
@@ -109,6 +135,8 @@ switch ($action) {
         $status    = in_array($_POST['status']??'',['Draft','Active','Closed']) ? $_POST['status'] : 'Draft';
         $start     = trim($_POST['start_date'] ?? '') ?: null;
         $end       = trim($_POST['end_date'] ?? '') ?: null;
+        $require_name = (int)($_POST['require_name'] ?? 0);
+        $require_email = (int)($_POST['require_email'] ?? 0);
         $questions = json_decode($_POST['questions'] ?? '[]', true) ?: [];
 
         if (!$id)    respond(false, 'Survey ID is required.');
@@ -139,6 +167,16 @@ switch ($action) {
                 }
             }
             $conn->commit();
+            
+            // Store survey settings in session
+            if (!isset($_SESSION['survey_settings'])) {
+                $_SESSION['survey_settings'] = [];
+            }
+            $_SESSION['survey_settings'][$id] = [
+                'require_name' => (bool)$require_name,
+                'require_email' => (bool)$require_email
+            ];
+            
             respond(true, 'Survey updated.');
         } catch (Exception $e) {
             $conn->rollback();

@@ -427,7 +427,15 @@ require_once __DIR__ . '/../includes/header.php';
 
                     <div class="col-md-4">
                         <label for="rec_category" class="form-label">Category *</label>
-                        <input type="text" id="rec_category" class="form-control" placeholder="Enter category" maxlength="100">
+                        <select id="rec_category" class="form-select">
+                            <option value="">Select a category</option>
+                            <option value="Academic">Academic</option>
+                            <option value="Governance">Governance</option>
+                            <option value="Operational">Operational</option>
+                            <option value="Accreditation">Accreditation</option>
+                            <option value="Student Assessment">Student Assessment</option>
+                            <option value="Faculty Development">Faculty Development</option>
+                        </select>
                     </div>
 
                     <div class="col-md-4">
@@ -720,17 +728,17 @@ function saveRecord() {
     const selectedDocument = fileInput && fileInput.files && fileInput.files.length > 0 ? fileInput.files[0] : null;
 
     if (!title || !body || !category) {
-        showToast('Title, ' + standardsState.bodyLabel + ', and Category are required.', 'error');
+        alert('Title, ' + standardsState.bodyLabel + ', and Category are required.');
         return;
     }
 
     if (standardsState.isPolicy && !recId && !selectedDocument) {
-        showToast('Please upload a policy document (PDF).', 'error');
+        alert('Please upload a policy document (PDF).');
         return;
     }
 
     if (selectedDocument && !/\.pdf$/i.test(selectedDocument.name)) {
-        showToast('Only PDF files are allowed for policy documents.', 'error');
+        alert('Only PDF files are allowed for policy documents.');
         return;
     }
 
@@ -761,7 +769,7 @@ function saveRecord() {
     }
 
     qaAjax('/qa_system/api/standards.php', requestData, function () {
-        window.location.reload();
+        location.reload();
     });
 }
 

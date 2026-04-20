@@ -70,7 +70,7 @@ function showToast(message, type = 'info') {
         <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:0">&times;</button>
     `;
     container.appendChild(toast);
-    setTimeout(() => { if (toast.parentElement) toast.remove(); }, 4000);
+    setTimeout(() => { if (toast.parentElement) toast.remove(); }, 6000);
 }
 
 // ─── AJAX Helper ─────────────────────────────────────
@@ -84,19 +84,12 @@ function qaAjax(url, data, onSuccess, onError) {
         dataType: 'json',
         success: function(res) {
             if (res.status === 'success') {
-                showToast(res.message || 'Done!', 'success');
                 if (onSuccess) onSuccess(res);
             } else {
-                showToast(res.message || 'An error occurred.', 'error');
                 if (onError) onError(res);
             }
         },
         error: function(xhr) {
-            const fallback = 'Server error. Please try again.';
-            const serverMessage = xhr && xhr.responseJSON && xhr.responseJSON.message
-                ? String(xhr.responseJSON.message)
-                : (xhr && xhr.responseText ? String(xhr.responseText).trim() : '');
-            showToast(serverMessage || fallback, 'error');
             if (onError) onError(xhr);
         }
     };

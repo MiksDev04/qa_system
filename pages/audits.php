@@ -202,6 +202,10 @@ require_once __DIR__ . '/../includes/header.php';
                                 onclick='editAudit(<?= json_encode($au) ?>)' title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </button>
+                            <button class="btn-qa btn-qa-danger btn-qa-sm btn-qa-icon"
+                                onclick="deleteAudit(<?= $au['audit_id'] ?>)" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -366,7 +370,7 @@ function editAudit(data){
 function saveAudit(){
     const title = $("#aud_title").val().trim();
     const scheduled = $("#aud_scheduled").val();
-    if(!title || !scheduled){ showToast("Required fields missing","error"); return; }
+    if(!title || !scheduled){ alert("Required fields missing"); return; }
 
     qaAjax("/qa_system/api/audits.php", {
         action: $("#aud_id").val() ? "update" : "create",
@@ -375,7 +379,7 @@ function saveAudit(){
         title, audit_type: $("#aud_type").val(), status: $("#aud_status").val(),
         scope: $("#aud_desc").val(), findings: $("#aud_findings").val(), scheduled_date: scheduled,
         auditor_name: $("#aud_name").val(), auditor_email: $("#aud_email").val()
-    }, () => location.reload());
+    }, () => { location.reload(); });
 }
 
 function viewAuditDetails(id){
@@ -414,6 +418,10 @@ function viewAuditDetails(id){
     }).fail(function(){
         $("#detailsBody").html("<p class=\"text-danger\">Unable to load audit details.</p>");
     });
+}
+
+function deleteAudit(id) {
+    confirmDelete("/qa_system/api/audits.php", {action:"delete", audit_id: id}, () => location.reload());
 }
 </script>';
 require_once __DIR__ . '/../includes/footer.php';
