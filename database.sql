@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS surveys (
     start_date      DATE,
     end_date        DATE,
     qr_token        VARCHAR(64)         UNIQUE,    -- unique token for QR-based access
+    require_name    TINYINT(1)          DEFAULT 0, -- whether respondent name is required
+    require_email   TINYINT(1)          DEFAULT 0, -- whether respondent email is required
     created_date    DATE                DEFAULT (CURRENT_DATE),
     created_at      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

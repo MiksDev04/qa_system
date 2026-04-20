@@ -1,11 +1,6 @@
 <?php
 // api/surveys.php – CRUD REST API for surveys + survey_questions
 // ByteBandits QA Management System
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
-
 require_once __DIR__ . '/../config/database.php';
 header('Content-Type: application/json');
 
@@ -79,18 +74,10 @@ switch ($action) {
 
         $token = generateToken();
         
-        // Store respondent requirements as JSON metadata in description
-        $metadata = [
-            'require_name' => (bool)$require_name,
-            'require_email' => (bool)$require_email,
-            'original_desc' => $desc
-        ];
-        $desc_with_meta = !empty($desc) ? $desc : '';
-        
         $conn->begin_transaction();
         try {
-            $stmt = $conn->prepare("INSERT INTO surveys (title,description,target_audience,status,start_date,end_date,qr_token,created_date) VALUES (?,?,?,?,?,?,?,CURDATE())");
-            $stmt->bind_param('sssssss', $title, $desc_with_meta, $audience, $status, $start, $end, $token);
+            $stmt = $conn->prepare("INSERT INTO surveys (title,description,target_audience,status,start_date,end_date,qr_token,require_name,require_email,created_date) VALUES (?,?,?,?,?,?,?,?,?,CURDATE())");
+            $stmt->bind_param('sssssssii', $title, $desc, $audience, $status, $start, $end, $token, $require_name, $require_email);
             $stmt->execute();
             $survey_id = $conn->insert_id;
 
@@ -109,15 +96,6 @@ switch ($action) {
                 }
             }
             $conn->commit();
-            
-            // Store survey settings in session
-            if (!isset($_SESSION['survey_settings'])) {
-                $_SESSION['survey_settings'] = [];
-            }
-            $_SESSION['survey_settings'][$survey_id] = [
-                'require_name' => (bool)$require_name,
-                'require_email' => (bool)$require_email
-            ];
             
             respond(true, 'Survey created.', ['id' => $survey_id, 'token' => $token]);
         } catch (Exception $e) {
@@ -144,8 +122,8 @@ switch ($action) {
 
         $conn->begin_transaction();
         try {
-            $stmt = $conn->prepare("UPDATE surveys SET title=?,description=?,target_audience=?,status=?,start_date=?,end_date=?,updated_at=NOW() WHERE survey_id=?");
-            $stmt->bind_param('ssssssi', $title, $desc, $audience, $status, $start, $end, $id);
+            $stmt = $conn->prepare("UPDATE surveys SET title=?,description=?,target_audience=?,status=?,start_date=?,end_date=?,require_name=?,require_email=?,updated_at=NOW() WHERE survey_id=?");
+            $stmt->bind_param('ssssssiii', $title, $desc, $audience, $status, $start, $end, $require_name, $require_email, $id);
             $stmt->execute();
 
             // Sync questions: delete existing then re-insert
@@ -167,15 +145,6 @@ switch ($action) {
                 }
             }
             $conn->commit();
-            
-            // Store survey settings in session
-            if (!isset($_SESSION['survey_settings'])) {
-                $_SESSION['survey_settings'] = [];
-            }
-            $_SESSION['survey_settings'][$id] = [
-                'require_name' => (bool)$require_name,
-                'require_email' => (bool)$require_email
-            ];
             
             respond(true, 'Survey updated.');
         } catch (Exception $e) {

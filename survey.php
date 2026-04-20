@@ -22,9 +22,6 @@ if (!isset($_SESSION['survey_submitted'])) {
 if (!isset($_SESSION['survey_form_nonce'])) {
     $_SESSION['survey_form_nonce'] = [];
 }
-if (!isset($_SESSION['survey_settings'])) {
-    $_SESSION['survey_settings'] = [];
-}
 
 if (!$token) { $error = 'Invalid survey link. No token provided.'; }
 else {
@@ -195,8 +192,8 @@ if ($requestMethod === 'POST' && $survey && !$error && !$submitted) {
         <!-- Respondent info -->
         <div class="qa-card mb-4" style="padding:18px">
             <div class="qa-card-title mb-3">About You<?php 
-                $require_name = isset($_SESSION['survey_settings'][$survey['survey_id']]['require_name']) ? $_SESSION['survey_settings'][$survey['survey_id']]['require_name'] : false;
-                $require_email = isset($_SESSION['survey_settings'][$survey['survey_id']]['require_email']) ? $_SESSION['survey_settings'][$survey['survey_id']]['require_email'] : false;
+                $require_name = (bool)($survey['require_name'] ?? 0);
+                $require_email = (bool)($survey['require_email'] ?? 0);
             ?></div>
             <div class="row g-3">
                 <div class="col-md-6">
