@@ -35,16 +35,16 @@ if ($auditColCheck && $auditColCheck->num_rows > 0) {
 }
 
 $visible_filters = [
-    'year_from' => false,
-    'year_to' => false,
+    'year_from' => in_array($report_type, ['kpi_summary', 'indicator_trend'], true),
+    'year_to' => in_array($report_type, ['kpi_summary', 'indicator_trend'], true),
     'semester' => $report_type === 'kpi_summary',
     'category' => in_array($report_type, ['kpi_summary', 'indicator_trend'], true),
     'indicator' => in_array($report_type, ['kpi_summary', 'indicator_trend'], true),
     'survey_id' => in_array($report_type, ['survey_summary', 'response_detail'], true),
     'audit_status' => $report_type === 'audit_action_trace' || ($report_type === 'standard_compliance' && $has_audit_standard_link),
     'standard_id' => $report_type === 'standard_compliance' || ($report_type === 'audit_action_trace' && $has_audit_standard_link),
-    'from_date' => in_array($report_type, ['kpi_summary', 'indicator_trend', 'survey_summary', 'response_detail', 'audit_action_trace', 'standard_compliance'], true),
-    'to_date' => in_array($report_type, ['kpi_summary', 'indicator_trend', 'survey_summary', 'response_detail', 'audit_action_trace', 'standard_compliance'], true),
+    'from_date' => in_array($report_type, ['survey_summary', 'response_detail', 'audit_action_trace', 'standard_compliance'], true),
+    'to_date' => in_array($report_type, ['survey_summary', 'response_detail', 'audit_action_trace', 'standard_compliance'], true),
 ];
 
 // ─── Build report data ──────────────────────────────
@@ -62,8 +62,6 @@ elseif($report_type === 'kpi_summary'){
     if($semester)    { $w[]='r.semester = ?'; $p[]=$semester; $t.='s'; }
     if($category)    { $w[]='i.category = ?'; $p[]=$category; $t.='s'; }
     if($indicator_id){ $w[]='i.indicator_id = ?'; $p[]=$indicator_id; $t.='i'; }
-    if($from_date && strtotime($from_date)) { $w[]='DATE(r.created_at) >= ?'; $p[]=$from_date; $t.='s'; }
-    if($to_date && strtotime($to_date))     { $w[]='DATE(r.created_at) <= ?'; $p[]=$to_date; $t.='s'; }
     $sql="SELECT i.name,i.category,i.unit,i.target_value,r.year,r.semester,r.actual_value,r.remarks,r.created_at
           FROM qa_records r JOIN qa_indicators i ON r.indicator_id=i.indicator_id
           WHERE ".implode(' AND ',$w)."
@@ -145,15 +143,13 @@ elseif($report_type === 'response_detail'){
 }
 elseif($report_type === 'indicator_trend'){
     $report_headers = ['Indicator','Category','Year','Semester','Target','Actual','% of Target','Risk Flag','Recorded Date'];
-    $w=['1=1']; $p=[]; $t='';
+    $w=["r.year BETWEEN ? AND ?"]; $p=[$year_from,$year_to]; $t='ii';
     if($indicator_id){ $w[]='i.indicator_id = ?'; $p[]=$indicator_id; $t.='i'; }
     if($category)    { $w[]='i.category = ?'; $p[]=$category; $t.='s'; }
-    if($from_date && strtotime($from_date)) { $w[]='DATE(r.created_at) >= ?'; $p[]=$from_date; $t.='s'; }
-    if($to_date && strtotime($to_date))     { $w[]='DATE(r.created_at) <= ?'; $p[]=$to_date; $t.='s'; }
     $sql="SELECT i.name,i.category,i.target_value,r.year,r.semester,r.actual_value,r.created_at
           FROM qa_records r JOIN qa_indicators i ON r.indicator_id=i.indicator_id
           WHERE ".implode(' AND ',$w)." ORDER BY i.name,r.year,r.semester";
-    $stmt=$conn->prepare($sql); if($t) $stmt->bind_param($t,...$p); $stmt->execute();
+    $stmt=$conn->prepare($sql); $stmt->bind_param($t,...$p); $stmt->execute();
     $res=$stmt->get_result();
     while($row=$res->fetch_assoc()){
         $pct = $row['target_value'] > 0 ? round(($row['actual_value']/$row['target_value'])*100,1) : 0;
@@ -507,16 +503,16 @@ function toggleFilters(){
     const reportType = document.getElementById("report_type");
     const type = reportType ? reportType.value : "kpi_summary";
 
-    setFilterVisibility(".filter-semester, .filter-category, .filter-indicator, .filter-survey-id, .filter-audit-status, .filter-standard-id, .filter-from-date, .filter-to-date", false);
+    setFilterVisibility(".filter-year-from, .filter-year-to, .filter-semester, .filter-category, .filter-indicator, .filter-survey-id, .filter-audit-status, .filter-standard-id, .filter-from-date, .filter-to-date", false);
 
-    // Determine which date filters to show (for applicable report types)
-    const showDates = ["kpi_summary", "indicator_trend", "survey_summary", "response_detail", "audit_action_trace", "standard_compliance"].includes(type);
+    // Determine which date filters to show (for applicable report types - NOT for KPI reports)
+    const showDates = ["survey_summary", "response_detail", "audit_action_trace", "standard_compliance"].includes(type);
 
     if(type === "kpi_summary"){
-        setFilterVisibility(".filter-semester, .filter-category, .filter-indicator", true);
+        setFilterVisibility(".filter-year-from, .filter-year-to, .filter-semester, .filter-category, .filter-indicator", true);
     }
     else if(type === "indicator_trend"){
-        setFilterVisibility(".filter-category, .filter-indicator", true);
+        setFilterVisibility(".filter-year-from, .filter-year-to, .filter-category, .filter-indicator", true);
     }
     else if(type === "survey_summary" || type === "response_detail"){
         setFilterVisibility(".filter-survey-id", true);

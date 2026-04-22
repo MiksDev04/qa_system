@@ -84,7 +84,7 @@ if ($action === 'update') {
     $standardId = (int)($_POST['standard_id'] ?? 0);
     $scope = trim($_POST['scope'] ?? '');
     $findings = trim($_POST['findings'] ?? '');
-    $actual_date = trim($_POST['actual_date'] ?? null);
+    $actual_date = !empty($_POST['actual_date']) ? trim($_POST['actual_date']) : null;
     $status = allowedValue(trim($_POST['status'] ?? 'Pending'), ['Pending', 'In Progress', 'Completed', 'Cancelled'], 'Pending');
     $auditor_name = trim($_POST['auditor_name'] ?? '');
     $auditor_email = trim($_POST['auditor_email'] ?? '');
@@ -125,7 +125,7 @@ if ($action === 'update') {
     }
 
     http_response_code(500);
-    respond(false, 'Failed to update audit');
+    respond(false, 'Failed to update audit: ' . $stmt->error);
 }
 
 if ($action === 'delete') {

@@ -12,8 +12,8 @@ if ($stdColCheck && $stdColCheck->num_rows > 0) {
 }
 
 $standards_options = [];
-if ($has_standard_link) {
-    $stdQ = $conn->query("SELECT standard_id, title FROM qa_standards WHERE status='Active' ORDER BY title");
+$stdQ = $conn->query("SELECT standard_id, title FROM qa_standards WHERE status='Active' ORDER BY title");
+if ($stdQ) {
     while ($s = $stdQ->fetch_assoc()) {
         $standards_options[] = $s;
     }
@@ -250,7 +250,6 @@ require_once __DIR__ . '/../includes/header.php';
                     <option value="Cancelled">Cancelled</option>
                 </select>
             </div>
-            <?php if ($has_standard_link): ?>
             <div class="col-12">
                 <label class="qa-form-label">Linked Standard</label>
                 <select id="aud_standard" class="qa-form-control">
@@ -260,7 +259,6 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
-            <?php endif; ?>
             <div class="col-12">
                 <label class="qa-form-label">Title *</label>
                 <input type="text" id="aud_title" class="qa-form-control" placeholder="e.g. Academic Program Review" maxlength="200">
@@ -379,7 +377,9 @@ function saveAudit(){
         title, audit_type: $("#aud_type").val(), status: $("#aud_status").val(),
         scope: $("#aud_desc").val(), findings: $("#aud_findings").val(), scheduled_date: scheduled,
         auditor_name: $("#aud_name").val(), auditor_email: $("#aud_email").val()
-    }, () => { location.reload(); });
+    }, () => { location.reload(); }, (err) => {
+        alert("Error: " + (err.message || "Failed to save audit"));
+    });
 }
 
 function viewAuditDetails(id){
