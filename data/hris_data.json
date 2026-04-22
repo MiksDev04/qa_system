@@ -1,0 +1,143 @@
+{
+  "system": "Human Resources Information System (HRIS)",
+  "last_updated": "2026-04-21",
+  "sync_source": "hris_api",
+  "institution": "PLSP University",
+  "data": [
+    {
+      "academic_period": "2024-1st",
+      "year": 2024,
+      "semester": "1st",
+      "metrics": {
+        "total_faculty": 145,
+        "faculty_evaluation_average": 82.50,
+        "faculty_satisfaction_score": 78.30,
+        "research_publications_count": 8,
+        "conference_presentations": 12,
+        "grant_applications": 5,
+        "grant_awards": 2,
+        "research_projects_ongoing": 18,
+        "faculty_training_hours": 450,
+        "professional_development_participants": 98,
+        "faculty_turnover_rate": 3.50,
+        "new_faculty_hired": 4,
+        "faculty_retired": 2
+      },
+      "remarks": "Good research output; professional development strong"
+    },
+    {
+      "academic_period": "2024-2nd",
+      "year": 2024,
+      "semester": "2nd",
+      "metrics": {
+        "total_faculty": 147,
+        "faculty_evaluation_average": 84.10,
+        "faculty_satisfaction_score": 79.50,
+        "research_publications_count": 10,
+        "conference_presentations": 14,
+        "grant_applications": 7,
+        "grant_awards": 3,
+        "research_projects_ongoing": 20,
+        "faculty_training_hours": 520,
+        "professional_development_participants": 112,
+        "faculty_turnover_rate": 2.80,
+        "new_faculty_hired": 3,
+        "faculty_retired": 1
+      },
+      "remarks": "Improved faculty evaluation scores and research activity"
+    },
+    {
+      "academic_period": "2024-Annual",
+      "year": 2024,
+      "semester": "Annual",
+      "metrics": {
+        "total_faculty": 146,
+        "faculty_evaluation_average": 83.30,
+        "faculty_satisfaction_score": 78.90,
+        "research_publications_count": 18,
+        "conference_presentations": 26,
+        "grant_applications": 12,
+        "grant_awards": 5,
+        "research_projects_total": 38,
+        "faculty_training_hours": 970,
+        "professional_development_participants": 210,
+        "faculty_turnover_rate": 3.15,
+        "new_faculty_hired": 7,
+        "faculty_retired": 3,
+        "employee_retention_rate": 96.85
+      },
+      "remarks": "Strong annual performance in research and faculty development"
+    },
+    {
+      "academic_period": "2025-1st",
+      "year": 2025,
+      "semester": "1st",
+      "metrics": {
+        "total_faculty": 148,
+        "faculty_evaluation_average": 85.40,
+        "faculty_satisfaction_score": 80.20,
+        "research_publications_count": 9,
+        "conference_presentations": 13,
+        "grant_applications": 6,
+        "grant_awards": 2,
+        "research_projects_ongoing": 21,
+        "faculty_training_hours": 480,
+        "professional_development_participants": 105,
+        "faculty_turnover_rate": 2.70,
+        "new_faculty_hired": 3,
+        "faculty_retired": 0
+      },
+      "remarks": "Increased faculty evaluation scores; good retention"
+    },
+    {
+      "academic_period": "2025-2nd",
+      "year": 2025,
+      "semester": "2nd",
+      "metrics": {
+        "total_faculty": 150,
+        "faculty_evaluation_average": 86.20,
+        "faculty_satisfaction_score": 81.10,
+        "research_publications_count": 11,
+        "conference_presentations": 16,
+        "grant_applications": 8,
+        "grant_awards": 4,
+        "research_projects_ongoing": 22,
+        "faculty_training_hours": 550,
+        "professional_development_participants": 120,
+        "faculty_turnover_rate": 2.00,
+        "new_faculty_hired": 4,
+        "faculty_retired": 1
+      },
+      "remarks": "Excellent faculty development and research activity momentum"
+    }
+  ],
+  "kpi_mapping": {
+    "faculty_evaluation_average": {
+      "indicator_name": "Faculty Evaluation Average",
+      "indicator_id": 4,
+      "unit": "%",
+      "target_value": 85.00
+    },
+    "research_publications_count": {
+      "indicator_name": "Research Output Count",
+      "indicator_id": 5,
+      "unit": "count",
+      "target_value": 10.00
+    },
+    "faculty_satisfaction_score": {
+      "indicator_name": "Faculty Satisfaction Score",
+      "indicator_id": null,
+      "unit": "%",
+      "target_value": 80.00,
+      "notes": "May create new indicator if needed"
+    },
+    "employee_retention_rate": {
+      "indicator_name": "Employee Retention Rate",
+      "indicator_id": null,
+      "unit": "%",
+      "target_value": 95.00,
+      "notes": "May create new indicator if needed"
+    }
+  },
+  "notes": "This is sample data from the Human Resources Information System. Faculty evaluation scores and research output are pulled during semester and annual periods."
+}

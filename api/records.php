@@ -7,6 +7,8 @@ header('Content-Type: application/json');
 $conn   = getConnection();
 $action = trim($_POST['action'] ?? $_GET['action'] ?? '');
 
+error_log("Records API called with action: $action, POST data: " . json_encode($_POST));
+
 function respond(bool $ok, string $msg, array $data = []): void {
     echo json_encode(array_merge(['status' => $ok ? 'success' : 'error', 'message' => $msg], $data));
     exit;
@@ -50,7 +52,7 @@ switch ($action) {
         $countStmt->execute();
         $total = (int)$countStmt->get_result()->fetch_assoc()['c'];
 
-        $sql = 'SELECT r.*, i.name AS indicator_name, i.target_value, i.unit
+        $sql = 'SELECT r.record_id, r.indicator_id, r.year, r.semester, r.actual_value, r.remarks, r.recorded_by, r.source_system, r.external_sync_id, r.created_at, r.updated_at, i.name AS indicator_name, i.target_value, i.unit
                 FROM qa_records r
                 JOIN qa_indicators i ON r.indicator_id = i.indicator_id
                 WHERE ' . implode(' AND ', $where) . '
@@ -110,11 +112,30 @@ switch ($action) {
         $remarks      = trim($_POST['remarks'] ?? '');
         $recorded_by  = trim($_POST['recorded_by'] ?? '');
 
-        if (!$id || !$indicator_id) respond(false, 'Record ID and Indicator are required.');
+        if (!$id) respond(false, 'Record ID is required.');
+        if (!$indicator_id) respond(false, 'Indicator is required.');
+        if ($year < 2000 || $year > 2099) respond(false, 'Invalid year.');
+
+        // Check record exists
+        $chk_rec = $conn->prepare("SELECT record_id FROM qa_records WHERE record_id=?");
+        $chk_rec->bind_param('i', $id);
+        $chk_rec->execute();
+        if (!$chk_rec->get_result()->fetch_assoc()) respond(false, 'Record not found.');
+
+        // Check indicator exists
+        $chk_ind = $conn->prepare("SELECT indicator_id FROM qa_indicators WHERE indicator_id=?");
+        $chk_ind->bind_param('i', $indicator_id);
+        $chk_ind->execute();
+        if (!$chk_ind->get_result()->fetch_assoc()) respond(false, 'Indicator not found.');
 
         $stmt = $conn->prepare("UPDATE qa_records SET indicator_id=?,year=?,semester=?,actual_value=?,remarks=?,recorded_by=?,updated_at=NOW() WHERE record_id=?");
+        if (!$stmt) respond(false, 'Database error: ' . $conn->error);
+        
         $stmt->bind_param('iisdssi', $indicator_id, $year, $semester, $actual_value, $remarks, $recorded_by, $id);
-        $stmt->execute() ? respond(true, 'Record updated.') : respond(false, 'Failed to update record.');
+        if (!$stmt->execute()) {
+            respond(false, 'Update failed: ' . $stmt->error);
+        }
+        respond(true, 'Record updated.');
         break;
 
     case 'delete':

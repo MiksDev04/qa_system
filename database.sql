@@ -34,9 +34,58 @@ CREATE TABLE IF NOT EXISTS qa_records (
     actual_value    DECIMAL(10,2)       NOT NULL,
     remarks         TEXT,
     recorded_by     VARCHAR(100),       -- name of person entering the record
+    source_system   VARCHAR(50),        -- 'LMS', 'HRIS', 'FACULTY_EVAL', 'Manual'
+    external_sync_id INT,               -- Reference to qa_external_data_cache if auto-synced
     created_at      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_qa_indicator FOREIGN KEY (indicator_id) REFERENCES qa_indicators(indicator_id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- EXTERNAL DATA INTEGRATION TABLES
+-- ============================================================
+
+-- Mapping configuration for external system fields to QA indicators
+CREATE TABLE IF NOT EXISTS qa_external_data_mapping (
+    mapping_id      INT AUTO_INCREMENT PRIMARY KEY,
+    source_system   VARCHAR(50)         NOT NULL,       -- 'LMS', 'HRIS', 'FACULTY_EVAL'
+    external_field  VARCHAR(150)        NOT NULL,       -- e.g., 'course_completion_rate', 'faculty_evaluation_average'
+    indicator_id    INT,                                -- FK to qa_indicators; NULL if new indicator to create
+    indicator_name  VARCHAR(150),                       -- Fall-back name if indicator_id is NULL
+    unit            VARCHAR(50),                        -- '%', 'count', 'score', etc.
+    target_value    DECIMAL(10,2),                      -- Suggested target
+    sync_frequency  ENUM('semester','annual','monthly') DEFAULT 'semester',  -- How often to sync
+    is_active       TINYINT(1)          DEFAULT 1,      -- Enable/disable this mapping
+    last_sync_date  DATETIME,                           -- Last successful sync for this mapping
+    sync_status     ENUM('pending','synced','error')    DEFAULT 'pending',
+    error_message   TEXT,                               -- Store error details from last sync
+    created_at      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_edm_indicator FOREIGN KEY (indicator_id) REFERENCES qa_indicators(indicator_id) ON DELETE SET NULL,
+    UNIQUE KEY unique_mapping (source_system, external_field)
+);
+
+-- Raw cache of external data before transformation to qa_records
+CREATE TABLE IF NOT EXISTS qa_external_data_cache (
+    cache_id        INT AUTO_INCREMENT PRIMARY KEY,
+    mapping_id      INT                 NOT NULL,       -- Reference to mapping configuration
+    source_system   VARCHAR(50)         NOT NULL,       -- 'LMS', 'HRIS', 'FACULTY_EVAL'
+    academic_period VARCHAR(50),                        -- '2024-1st', '2024-2nd', '2024-Annual'
+    year            YEAR,
+    semester        ENUM('1st','2nd','Annual'),
+    external_field  VARCHAR(150),
+    raw_value       VARCHAR(255),                       -- Raw value from external system (before conversion)
+    converted_value DECIMAL(10,2),                      -- Value converted to numeric for qa_records
+    validation_status ENUM('pending','valid','invalid') DEFAULT 'pending',
+    validation_error TEXT,                              -- Details if validation failed
+    sync_operation_id INT,                              -- Batch identifier for multi-record syncs
+    synced_to_record_id INT,                            -- FK to qa_records if successfully created
+    sync_date       DATETIME            DEFAULT CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_cache_mapping FOREIGN KEY (mapping_id) REFERENCES qa_external_data_mapping(mapping_id) ON DELETE CASCADE,
+    CONSTRAINT fk_cache_record FOREIGN KEY (synced_to_record_id) REFERENCES qa_records(record_id) ON DELETE SET NULL,
+    INDEX idx_source_period (source_system, academic_period),
+    INDEX idx_sync_status (validation_status)
 );
 
 -- Surveys (with metadata)

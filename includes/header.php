@@ -80,9 +80,13 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
         </a>
 
         <div class="nav-label mt-3">REPORTING</div>
+        <a href="/qa_system/pages/executive_report.php" class="nav-item <?= $current_page === 'executive_report' ? 'active' : '' ?>">
+            <i class="bi bi-file-earmark-pdf"></i>
+            <span>Executive Summary</span>
+        </a>
         <a href="/qa_system/pages/reports.php" class="nav-item <?= $current_page === 'reports' ? 'active' : '' ?>">
             <i class="bi bi-bar-chart-line"></i>
-            <span>Reports</span>
+            <span>Detailed Reports</span>
         </a>
     </nav>
 

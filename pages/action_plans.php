@@ -134,13 +134,13 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
 
         <div class="row-stack" style="gap:6px">
-            <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick="viewDetails(<?= $ap['action_id'] ?>)">
+            <button type="button" class="btn-qa btn-qa-secondary btn-qa-sm" onclick="viewDetails(<?= $ap['action_id'] ?>); return false;">
                 <i class="bi bi-eye"></i> View Details
             </button>
-            <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick='editPlan(<?= json_encode($ap) ?>)'>
+            <button type="button" class="btn-qa btn-qa-secondary btn-qa-sm" onclick="editPlan(<?= $ap['action_id'] ?>); return false;">
                 <i class="bi bi-pencil"></i> Edit
             </button>
-            <button class="btn-qa btn-qa-danger btn-qa-sm" onclick="deletePlan(<?= $ap['action_id'] ?>)">
+            <button type="button" class="btn-qa btn-qa-danger btn-qa-sm" onclick="deletePlan(<?= $ap['action_id'] ?>); return false;">
                 <i class="bi bi-trash"></i> Delete
             </button>
         </div>
@@ -233,8 +233,8 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button class="btn-qa btn-qa-primary" onclick="savePlan()"><i class="bi bi-save"></i> Save</button>
+        <button type="button" class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-qa btn-qa-primary" onclick="savePlan(); return false;"><i class="bi bi-save"></i> Save</button>
       </div>
     </div>
   </div>
@@ -284,8 +284,8 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button class="btn-qa btn-qa-primary" onclick="submitClose()"><i class="bi bi-check-circle"></i> Close Action Plan</button>
+        <button type="button" class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn-qa btn-qa-primary" onclick="submitClose(); return false;"><i class="bi bi-check-circle"></i> Close Action Plan</button>
       </div>
     </div>
   </div>
@@ -330,21 +330,32 @@ function openAdd(){
     $("#ap_priority").val("High");
 }
 
-function editPlan(data){
-    $("#apModalTitle").text("Edit Action Plan");
-    $("#ap_id").val(data.action_id);
-    $("#ap_title").val(data.title);
-    $("#ap_desc").val(data.description);
-    $("#ap_root").val(data.root_cause);
-    $("#ap_audit").val(data.audit_id || "");
-    $("#ap_assigned").val(data.assigned_to);
-    $("#ap_email").val(data.assigned_to_email);
-    $("#ap_dept").val(data.department);
-    $("#ap_target").val(data.target_date);
-    $("#ap_outcome").val(data.expected_outcome);
-    $("#ap_type").val(data.action_type);
-    $("#ap_priority").val(data.priority);
-    new bootstrap.Modal(document.getElementById("apModal")).show();
+function editPlan(id){
+    console.log("editPlan called with id:", id);
+    $.get("/qa_system/api/action_plans.php", {action:"get_details", action_id: id}, function(res){
+        if(res.status === "success"){
+            const data = res.data;
+            $("#apModalTitle").text("Edit Action Plan");
+            $("#ap_id").val(data.action_id);
+            $("#ap_title").val(data.title);
+            $("#ap_desc").val(data.description);
+            $("#ap_root").val(data.root_cause);
+            $("#ap_audit").val(data.audit_id || "");
+            $("#ap_assigned").val(data.assigned_to);
+            $("#ap_email").val(data.assigned_to_email);
+            $("#ap_dept").val(data.department);
+            $("#ap_target").val(data.target_date);
+            $("#ap_outcome").val(data.expected_outcome);
+            $("#ap_type").val(data.action_type);
+            $("#ap_priority").val(data.priority);
+            new bootstrap.Modal(document.getElementById("apModal")).show();
+        } else {
+            alert("Error loading action plan: " + res.message);
+        }
+    }).fail(function(err){
+        alert("Failed to load action plan");
+        console.error(err);
+    });
 }
 
 function savePlan(){
@@ -366,34 +377,52 @@ function savePlan(){
 }
 
 function viewDetails(id){
+    console.log("viewDetails called with id:", id);
+    if (!id) {
+        alert("Invalid action ID");
+        return;
+    }
+    
     $("#detailsBody").html("<div class=\\"text-center py-3\\"><div class=\\"spinner-border\\" style=\\"color:var(--accent)\\"></div></div>");
     new bootstrap.Modal(document.getElementById("detailsModal")).show();
-    $.get("/qa_system/api/action_plans.php", {action:"get_details", action_id: id}, function(res){
-        if(res.status === "success"){
-            const ap = res.data;
-            let html = `<div class="row g-3">
-                <div class="col-md-6"><strong>Type:</strong> ${ap.action_type}</div>
-                <div class="col-md-6"><strong>Priority:</strong> <span class="badge-status">${ap.priority}</span></div>
-                <div class="col-md-6"><strong>Status:</strong> ${ap.status}</div>
-                <div class="col-md-6"><strong>Assigned to:</strong> ${ap.assigned_to}</div>
-                <div class="col-md-6"><strong>Linked Audit:</strong> ${ap.audit_id ? (ap.audit_title || ("#" + ap.audit_id)) : "None"}</div>
-                <div class="col-md-6"><strong>Department:</strong> ${ap.department || "—"}</div>
-                <div class="col-md-6"><strong>Target Date:</strong> ${ap.target_date}</div>
-                <div class="col-md-6"><strong>Actual Date:</strong> ${ap.actual_date || "—"}</div>
-                <div class="col-12"><strong>Description:</strong><p>${ap.description}</p></div>
-                <div class="col-12"><strong>Root Cause:</strong><p>${ap.root_cause || "Not provided"}</p></div>
-                <div class="col-12"><strong>Expected Outcome:</strong><p>${ap.expected_outcome || "—"}</p></div>
-                <div class="col-12"><strong>Actual Outcome:</strong><p>${ap.actual_outcome || "—"}</p></div>
-            </div>`;
-            $("#detailsBody").html(html);
-            
-            let topBtn = "";
-            if(ap.status !== "Closed") {
-                topBtn = `<button class="btn-qa btn-qa-primary" onclick="openCloseModal(${ap.action_id})"><i class="bi bi-check-circle"></i> Close Plan</button>`;
+    
+    $.ajax({
+        url: "/qa_system/api/action_plans.php",
+        type: "GET",
+        data: {action:"get_details", action_id: id},
+        dataType: "json",
+        success: function(res){
+            console.log("Got response:", res);
+            if(res.status === "success"){
+                const ap = res.data;
+                let html = `<div class="row g-3">
+                    <div class="col-md-6"><strong>Type:</strong> ${ap.action_type}</div>
+                    <div class="col-md-6"><strong>Priority:</strong> <span class="badge-status">${ap.priority}</span></div>
+                    <div class="col-md-6"><strong>Status:</strong> ${ap.status}</div>
+                    <div class="col-md-6"><strong>Assigned to:</strong> ${ap.assigned_to}</div>
+                    <div class="col-md-6"><strong>Linked Audit:</strong> ${ap.audit_id ? (ap.audit_title || ("#" + ap.audit_id)) : "None"}</div>
+                    <div class="col-md-6"><strong>Department:</strong> ${ap.department || "—"}</div>
+                    <div class="col-md-6"><strong>Target Date:</strong> ${ap.target_date}</div>
+                    <div class="col-md-6"><strong>Actual Date:</strong> ${ap.actual_date || "—"}</div>
+                    <div class="col-12"><strong>Description:</strong><p>${ap.description}</p></div>
+                    <div class="col-12"><strong>Root Cause:</strong><p>${ap.root_cause || "Not provided"}</p></div>
+                    <div class="col-12"><strong>Expected Outcome:</strong><p>${ap.expected_outcome || "—"}</p></div>
+                    <div class="col-12"><strong>Actual Outcome:</strong><p>${ap.actual_outcome || "—"}</p></div>
+                </div>`;
+                $("#detailsBody").html(html);
+                
+                let topBtn = "";
+                if(ap.status !== "Closed") {
+                    topBtn = `<button type="button" class="btn-qa btn-qa-primary" onclick="openCloseModal(${ap.action_id})"><i class="bi bi-check-circle"></i> Close Plan</button>`;
+                }
+                $("#detailsTopActions").html(topBtn);
+            } else {
+                $("#detailsBody").html("<p class=\\"text-danger\\">Error: " + res.message + "</p>");
             }
-            $("#detailsTopActions").html(topBtn);
-        } else {
-            $("#detailsBody").html("<p class=\\"text-danger\\">Error loading details</p>");
+        },
+        error: function(err){
+            console.error("Error:", err);
+            $("#detailsBody").html("<p class=\\"text-danger\\">Failed to load details</p>");
         }
     });
 }
@@ -428,7 +457,14 @@ function submitClose(){
 }
 
 function deletePlan(id) {
-    confirmDelete(\"/qa_system/api/action_plans.php\", {action:\"delete\", action_id: id}, () => location.reload());
+    console.log("deletePlan called with id:", id);
+    if (!id) {
+        alert("Invalid action ID");
+        return;
+    }
+    if (confirm("Are you sure you want to delete this action plan?")) {
+        confirmDelete("/qa_system/api/action_plans.php", {action:"delete", action_id: id}, () => location.reload());
+    }
 }
 </script>';
 require_once __DIR__ . '/../includes/footer.php';

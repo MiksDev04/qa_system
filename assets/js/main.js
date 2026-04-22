@@ -83,14 +83,28 @@ function qaAjax(url, data, onSuccess, onError) {
         data: data,
         dataType: 'json',
         success: function(res) {
-            if (res.status === 'success') {
+            console.log("AJAX success response:", JSON.stringify(res));
+            if (res && res.status === 'success') {
                 if (onSuccess) onSuccess(res);
             } else {
+                console.log("API returned error, calling onError with:", res);
                 if (onError) onError(res);
             }
         },
-        error: function(xhr) {
-            if (onError) onError(xhr);
+        error: function(xhr, status, error) {
+            console.error("AJAX network error - Status:", status, "Error:", error);
+            console.error("Response text:", xhr.responseText);
+            if (onError) {
+                let errorObj = { message: error || 'Network error' };
+                try {
+                    if (xhr.responseText) {
+                        errorObj = JSON.parse(xhr.responseText);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse error response:", xhr.responseText);
+                }
+                onError(errorObj);
+            }
         }
     };
 

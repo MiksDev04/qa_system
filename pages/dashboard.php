@@ -44,25 +44,6 @@ $meeting_target = $conn->query("
     WHERE r.year = YEAR(CURDATE()) AND r.actual_value >= i.target_value
 ")->fetch_assoc()['c'];
 
-// KPI risk flags based on latest value per active indicator
-$kpi_risk = $conn->query("
-    SELECT
-        SUM(CASE WHEN t.target_value > 0 AND (t.latest_value / t.target_value) * 100 >= 100 THEN 1 ELSE 0 END) AS on_track,
-        SUM(CASE WHEN t.target_value > 0 AND (t.latest_value / t.target_value) * 100 >= 80 AND (t.latest_value / t.target_value) * 100 < 100 THEN 1 ELSE 0 END) AS at_risk,
-        SUM(CASE WHEN t.target_value > 0 AND (t.latest_value / t.target_value) * 100 < 80 THEN 1 ELSE 0 END) AS off_track
-    FROM (
-        SELECT i.indicator_id, i.target_value,
-               (SELECT r.actual_value FROM qa_records r WHERE r.indicator_id = i.indicator_id ORDER BY r.year DESC, r.created_at DESC LIMIT 1) AS latest_value
-        FROM qa_indicators i
-        WHERE i.status = 'Active'
-    ) t
-    WHERE t.latest_value IS NOT NULL
-")->fetch_assoc();
-
-$kpi_on_track = (int)($kpi_risk['on_track'] ?? 0);
-$kpi_at_risk = (int)($kpi_risk['at_risk'] ?? 0);
-$kpi_off_track = (int)($kpi_risk['off_track'] ?? 0);
-
 // Recent records (latest 5)
 $recent_records = $conn->query("
     SELECT r.*, i.name as indicator_name, i.target_value, i.unit
@@ -272,42 +253,6 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
             </a>
-        </div>
-    </div>
-</section>
-
-<section class="dashboard-section mb-4">
-    <div class="dashboard-section-head">
-        <h3>KPI Risk Snapshot</h3>
-        <p>Based on each indicator&apos;s latest recorded value.</p>
-    </div>
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
-                <div>
-                    <div class="stat-value"><?= $kpi_on_track ?></div>
-                    <div class="stat-label">On Track</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-icon amber"><i class="bi bi-exclamation-triangle"></i></div>
-                <div>
-                    <div class="stat-value"><?= $kpi_at_risk ?></div>
-                    <div class="stat-label">At Risk</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-icon red"><i class="bi bi-x-octagon"></i></div>
-                <div>
-                    <div class="stat-value"><?= $kpi_off_track ?></div>
-                    <div class="stat-label">Off Track</div>
-                </div>
-            </div>
         </div>
     </div>
 </section>

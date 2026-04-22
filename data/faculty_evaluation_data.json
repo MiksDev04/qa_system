@@ -1,0 +1,145 @@
+{
+  "system": "Faculty Evaluation & Performance System",
+  "last_updated": "2026-04-21",
+  "sync_source": "faculty_eval_api",
+  "institution": "PLSP University",
+  "data": [
+    {
+      "academic_period": "2024-1st",
+      "year": 2024,
+      "semester": "1st",
+      "metrics": {
+        "total_faculty_evaluated": 142,
+        "faculty_evaluation_average": 82.80,
+        "teaching_effectiveness_score": 84.20,
+        "student_feedback_average": 80.50,
+        "research_and_scholarship": 81.30,
+        "service_contribution": 82.50,
+        "professional_conduct": 85.10,
+        "faculty_with_excellent_rating": 38,
+        "faculty_with_satisfactory_rating": 96,
+        "faculty_with_needs_improvement": 8,
+        "employer_satisfaction_with_graduates": 79.40,
+        "graduate_competency_rating": 3.85
+      },
+      "remarks": "Overall positive evaluation results with strong professional conduct"
+    },
+    {
+      "academic_period": "2024-2nd",
+      "year": 2024,
+      "semester": "2nd",
+      "metrics": {
+        "total_faculty_evaluated": 144,
+        "faculty_evaluation_average": 84.30,
+        "teaching_effectiveness_score": 85.50,
+        "student_feedback_average": 82.10,
+        "research_and_scholarship": 83.40,
+        "service_contribution": 84.20,
+        "professional_conduct": 86.00,
+        "faculty_with_excellent_rating": 42,
+        "faculty_with_satisfactory_rating": 98,
+        "faculty_with_needs_improvement": 4,
+        "employer_satisfaction_with_graduates": 81.20,
+        "graduate_competency_rating": 3.92
+      },
+      "remarks": "Improved faculty evaluation average; strong employer feedback"
+    },
+    {
+      "academic_period": "2024-Annual",
+      "year": 2024,
+      "semester": "Annual",
+      "metrics": {
+        "total_faculty_evaluated": 143,
+        "faculty_evaluation_average": 83.55,
+        "teaching_effectiveness_score": 84.85,
+        "student_feedback_average": 81.30,
+        "research_and_scholarship": 82.35,
+        "service_contribution": 83.35,
+        "professional_conduct": 85.55,
+        "faculty_with_excellent_rating": 80,
+        "faculty_with_satisfactory_rating": 194,
+        "faculty_with_needs_improvement": 12,
+        "employer_satisfaction_rate": 80.30,
+        "graduate_competency_rating": 3.88,
+        "industry_placement_rate": 87.50
+      },
+      "remarks": "Annual consolidation shows consistent faculty quality and employer satisfaction"
+    },
+    {
+      "academic_period": "2025-1st",
+      "year": 2025,
+      "semester": "1st",
+      "metrics": {
+        "total_faculty_evaluated": 145,
+        "faculty_evaluation_average": 85.10,
+        "teaching_effectiveness_score": 86.30,
+        "student_feedback_average": 83.20,
+        "research_and_scholarship": 84.50,
+        "service_contribution": 85.10,
+        "professional_conduct": 86.50,
+        "faculty_with_excellent_rating": 45,
+        "faculty_with_satisfactory_rating": 98,
+        "faculty_with_needs_improvement": 2,
+        "employer_satisfaction_with_graduates": 82.50,
+        "graduate_competency_rating": 3.95
+      },
+      "remarks": "Significant improvement in faculty evaluation scores and student feedback"
+    },
+    {
+      "academic_period": "2025-2nd",
+      "year": 2025,
+      "semester": "2nd",
+      "metrics": {
+        "total_faculty_evaluated": 147,
+        "faculty_evaluation_average": 86.40,
+        "teaching_effectiveness_score": 87.50,
+        "student_feedback_average": 84.80,
+        "research_and_scholarship": 85.90,
+        "service_contribution": 86.50,
+        "professional_conduct": 87.20,
+        "faculty_with_excellent_rating": 52,
+        "faculty_with_satisfactory_rating": 93,
+        "faculty_with_needs_improvement": 2,
+        "employer_satisfaction_with_graduates": 83.70,
+        "graduate_competency_rating": 4.02
+      },
+      "remarks": "Excellent performance across all evaluation categories; strong employer feedback"
+    }
+  ],
+  "kpi_mapping": {
+    "faculty_evaluation_average": {
+      "indicator_name": "Faculty Evaluation Average",
+      "indicator_id": 4,
+      "unit": "%",
+      "target_value": 85.00
+    },
+    "employer_satisfaction_with_graduates": {
+      "indicator_name": "Employer Satisfaction Rate",
+      "indicator_id": 7,
+      "unit": "%",
+      "target_value": 80.00
+    },
+    "teaching_effectiveness_score": {
+      "indicator_name": "Teaching Effectiveness Score",
+      "indicator_id": null,
+      "unit": "%",
+      "target_value": 85.00,
+      "notes": "May create new indicator if needed"
+    },
+    "graduate_competency_rating": {
+      "indicator_name": "Graduate Competency Rating",
+      "indicator_id": null,
+      "unit": "score",
+      "target_value": 4.00,
+      "notes": "May create new indicator if needed"
+    },
+    "industry_placement_rate": {
+      "indicator_name": "Industry Placement Rate",
+      "indicator_id": null,
+      "unit": "%",
+      "target_value": 85.00,
+      "notes": "May create new indicator if needed"
+    }
+  },
+  "notes": "This is sample data from the Faculty Evaluation System. Data includes individual performance metrics, employer feedback, and graduate competency ratings pulled during semester and annual periods."
+}

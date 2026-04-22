@@ -1,0 +1,128 @@
+{
+  "system": "Learning Management System (LMS)",
+  "last_updated": "2026-04-21",
+  "sync_source": "lms_api",
+  "institution": "PLSP University",
+  "data": [
+    {
+      "academic_period": "2024-1st",
+      "year": 2024,
+      "semester": "1st",
+      "metrics": {
+        "course_completion_rate": 88.50,
+        "student_enrollment": 1250,
+        "courses_completed": 1107,
+        "courses_failed": 143,
+        "dropout_rate": 5.20,
+        "average_gpa": 2.98,
+        "pass_rate": 81.20,
+        "distinction_rate": 12.40,
+        "credit_hours_earned": 34500
+      },
+      "remarks": "Slight improvement in completion rate due to enhanced tutoring support"
+    },
+    {
+      "academic_period": "2024-2nd",
+      "year": 2024,
+      "semester": "2nd",
+      "metrics": {
+        "course_completion_rate": 90.75,
+        "student_enrollment": 1260,
+        "courses_completed": 1143,
+        "courses_failed": 117,
+        "dropout_rate": 4.80,
+        "average_gpa": 3.02,
+        "pass_rate": 82.80,
+        "distinction_rate": 13.20,
+        "credit_hours_earned": 35700
+      },
+      "remarks": "Strong performance with reduced dropout rate"
+    },
+    {
+      "academic_period": "2024-Annual",
+      "year": 2024,
+      "semester": "Annual",
+      "metrics": {
+        "course_completion_rate": 89.63,
+        "total_students": 1255,
+        "total_courses_completed": 2250,
+        "total_failed": 260,
+        "annual_dropout_rate": 5.00,
+        "annual_average_gpa": 3.00,
+        "annual_pass_rate": 82.00,
+        "graduation_rate": 73.50,
+        "retained_students": 1256,
+        "graduates": 921,
+        "student_satisfaction_score": 4.15
+      },
+      "remarks": "Annual consolidation of LMS metrics"
+    },
+    {
+      "academic_period": "2025-1st",
+      "year": 2025,
+      "semester": "1st",
+      "metrics": {
+        "course_completion_rate": 91.20,
+        "student_enrollment": 1280,
+        "courses_completed": 1166,
+        "courses_failed": 114,
+        "dropout_rate": 4.50,
+        "average_gpa": 3.05,
+        "pass_rate": 83.50,
+        "distinction_rate": 14.10,
+        "credit_hours_earned": 36000
+      },
+      "remarks": "Continued improvement with new learning interventions"
+    },
+    {
+      "academic_period": "2025-2nd",
+      "year": 2025,
+      "semester": "2nd",
+      "metrics": {
+        "course_completion_rate": 92.10,
+        "student_enrollment": 1290,
+        "courses_completed": 1187,
+        "courses_failed": 103,
+        "dropout_rate": 4.30,
+        "average_gpa": 3.08,
+        "pass_rate": 84.20,
+        "distinction_rate": 14.80,
+        "credit_hours_earned": 36500
+      },
+      "remarks": "Strong performance trend continues"
+    }
+  ],
+  "kpi_mapping": {
+    "course_completion_rate": {
+      "indicator_name": "Course Completion Rate",
+      "indicator_id": 8,
+      "unit": "%",
+      "target_value": 90.00
+    },
+    "dropout_rate": {
+      "indicator_name": "Dropout Rate",
+      "indicator_id": 6,
+      "unit": "%",
+      "target_value": 5.00
+    },
+    "pass_rate": {
+      "indicator_name": "Board Exam Passing Rate",
+      "indicator_id": 1,
+      "unit": "%",
+      "target_value": 80.00
+    },
+    "graduation_rate": {
+      "indicator_name": "Graduation Rate",
+      "indicator_id": 2,
+      "unit": "%",
+      "target_value": 75.00
+    },
+    "student_satisfaction_score": {
+      "indicator_name": "Student Satisfaction Score",
+      "indicator_id": 3,
+      "unit": "score",
+      "target_value": 4.00
+    }
+  },
+  "notes": "This is sample data from the Learning Management System. Values are pulled during semester and annual periods for automatic KPI record creation."
+}

@@ -174,7 +174,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
             <div class="col-12">
                 <label class="qa-form-label">Description</label>
-                <textarea id="ind_desc" class="qa-form-control" placeholder="Describe what this indicator measuresâ€¦" rows="3"></textarea>
+                <textarea id="ind_desc" class="qa-form-control" placeholder="Describe what this indicator measures" rows="3"></textarea>
             </div>
             <div class="col-md-4">
                 <label class="qa-form-label">Target Value *</label>
