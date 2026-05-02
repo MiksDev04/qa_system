@@ -763,12 +763,12 @@ function deleteRecord(id){
 }
 
 function loadExternalData() {
-    const source = \$('#ext_source').val();
+    const source = $('#ext_source').val();
     if (!source) {
-        \$('#ext_metric').html('<option value=\"\">-- Choose Metric --</option>');
-        \$('#ext_data_container').hide();
-        \$('#ext_indicator,#ext_year,#ext_actual').val('');
-        \$('#ext_semester').val('1st');
+        $('#ext_metric').html('<option value=\"\">-- Choose Metric --</option>');
+        $('#ext_data_container').hide();
+        $('#ext_indicator,#ext_year,#ext_actual').val('');
+        $('#ext_semester').val('1st');
         return;
     }
 
@@ -784,66 +784,65 @@ function loadExternalData() {
         });
         let options = '<option value=\"\">-- Choose Metric --</option>';
         metricSet.forEach(metric => {
-            const displayName = metric.replace(/_/g, ' ').replace(/\\\b\\\w/g, l => l.toUpperCase());
+            const displayName = metric.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             options += '<option value=\"' + metric + '\">' + displayName + '</option>';
         });
-        \$('#ext_metric').html(options);
-        \$('#ext_data_container').hide();
+        $('#ext_metric').html(options);
+        $('#ext_data_container').hide();
         return;
     }
 
-    \$('#ext_metric').html('<option value=\"\">Loading LMS data...</option>');
-    \$.ajax({
-        url: '../api/fetch_lms_performance.php',
-        type: 'GET',
-        data: { action: 'get_overview' },
-        dataType: 'json',
-        success: function(result) {
-            if (result.status === 'success' && result.data) {
-                const apiData = result.data;
-                const currentYear = new Date().getFullYear();
-                const lmsDataRecord = [{
-                    academic_period: currentYear + '-1st',
-                    year: currentYear,
-                    semester: '1st',
-                    metrics: {
-                        avg_grade: parseFloat(apiData.avg_grade) || 0,
-                        submission_rate: parseFloat(apiData.submission_rate) || 0,
-                        quiz_pass_rate: parseFloat(apiData.quiz_pass_rate) || 0,
-                        quiz_attempts: parseInt(apiData.quiz_attempts) || 0,
-                        total_students: parseInt(apiData.total_students) || 0,
-                        total_expected: parseInt(apiData.total_expected) || 0,
-                        total_submitted: parseInt(apiData.total_submitted) || 0,
-                        total_tasks: parseInt(apiData.total_tasks) || 0,
-                        total_quizzes: parseInt(apiData.total_quizzes) || 0,
-                        total_classes: parseInt(apiData.total_classes) || 0,
-                        quiz_passed: parseInt(apiData.quiz_passed) || 0
-                    },
-                    remarks: 'Real-time data from ArtisansLMS'
-                }];
-                
-                externalDataSources.LMS.data = lmsDataRecord;
-                const metricSet = new Set(Object.keys(lmsDataRecord[0].metrics));
-                let options = '<option value=\"\">-- Choose Metric --</option>';
-                metricSet.forEach(metric => {
-                    const displayName = metric.replace(/_/g, ' ').replace(/\\\b\\\w/g, l => l.toUpperCase());
-                    options += '<option value=\"' + metric + '\">' + displayName + '</option>';
-                });
-                \$('#ext_metric').html(options);
-                \$('#ext_data_container').hide();
-                console.log('LMS data loaded successfully');
-            } else {
-                const errorMsg = result.message || 'Invalid response format';
-                \$('#ext_metric').html('<option value=\"\">-- Choose Metric --</option>');
-                alert('Failed to fetch LMS data: ' + errorMsg);
-            }
-        },
-        error: function(error) {
-            console.error('Error fetching LMS data:', error);
-            \$('#ext_metric').html('<option value=\"\">-- Choose Metric --</option>');
-            alert('Error connecting to ArtisansLMS API: ' + error.statusText);
-        }
-    });
+    // USING DUMMY BACKUP DATA INSTEAD OF API CALL
+    $('#ext_metric').html('<option value=\"\">Loading LMS dummy data...</option>');
+    
+    // Simulate API delay
+    setTimeout(function() {
+        const currentYear = new Date().getFullYear();
+        const dummyData = {
+            avg_grade: 84.5,
+            submission_rate: 88.3,
+            quiz_pass_rate: 79.6,
+            quiz_attempts: 245,
+            total_students: 180,
+            total_expected: 180,
+            total_submitted: 159,
+            total_tasks: 12,
+            total_quizzes: 8,
+            total_classes: 6,
+            quiz_passed: 143
+        };
+        
+        const lmsDataRecord = [{
+            academic_period: currentYear + '-1st',
+            year: currentYear,
+            semester: '1st',
+            metrics: {
+                avg_grade: dummyData.avg_grade,
+                submission_rate: dummyData.submission_rate,
+                quiz_pass_rate: dummyData.quiz_pass_rate,
+                quiz_attempts: dummyData.quiz_attempts,
+                total_students: dummyData.total_students,
+                total_expected: dummyData.total_expected,
+                total_submitted: dummyData.total_submitted,
+                total_tasks: dummyData.total_tasks,
+                total_quizzes: dummyData.total_quizzes,
+                total_classes: dummyData.total_classes,
+                quiz_passed: dummyData.quiz_passed
+            },
+            remarks: 'Dummy backup data (API offline)'
+        }];
+        
+        externalDataSources.LMS.data = lmsDataRecord;
+        const metricSet = new Set(Object.keys(lmsDataRecord[0].metrics));
+        let options = '<option value=\"\">-- Choose Metric --</option>';
+        metricSet.forEach(metric => {
+            const displayName = metric.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            options += '<option value=\"' + metric + '\">' + displayName + '</option>';
+        });
+        $('#ext_metric').html(options);
+        $('#ext_data_container').hide();
+        console.log('LMS dummy data loaded successfully');
+    }, 500);
 }
 
 function populateExternalValue() {

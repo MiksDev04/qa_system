@@ -306,6 +306,10 @@ $(function(){
         $("#ap_assigned").val(prefillAudit.auditor_name || "");
         $("#ap_email").val(prefillAudit.auditor_email || "");
         new bootstrap.Modal(document.getElementById("apModal")).show();
+
+        const url = new URL(window.location);
+        url.searchParams.delete("new_from_audit");
+        window.history.replaceState({}, document.title, url.toString());
     }
 });
 

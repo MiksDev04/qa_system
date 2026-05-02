@@ -193,11 +193,6 @@ require_once __DIR__ . '/../includes/header.php';
                                 onclick="viewAuditDetails(<?= $au['audit_id'] ?>)" title="View Findings">
                                 <i class="bi bi-eye"></i>
                             </button>
-                            <a class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon"
-                               href="/qa_system/pages/action_plans.php?new_from_audit=<?= $au['audit_id'] ?>"
-                               title="Create Action Plan">
-                                <i class="bi bi-clipboard-plus"></i>
-                            </a>
                             <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon"
                                 onclick='editAudit(<?= json_encode($au) ?>)' title="Edit">
                                 <i class="bi bi-pencil"></i>
@@ -407,11 +402,6 @@ function viewAuditDetails(id){
             <div class="col-12"><strong>Title:</strong><p>${au.title || "N/A"}</p></div>
             <div class="col-12"><strong>Scope:</strong><p>${scope}</p></div>
             <div class="col-12"><strong>Findings:</strong><p>${findings}</p></div>
-            <div class="col-12">
-                <a class="btn-qa btn-qa-primary" href="/qa_system/pages/action_plans.php?new_from_audit=${au.audit_id}">
-                    <i class="bi bi-clipboard-plus"></i> Create Action Plan From This Audit
-                </a>
-            </div>
         </div>`;
 
         $("#detailsBody").html(html);
