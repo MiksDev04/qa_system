@@ -6,21 +6,31 @@ $page_title = 'Manage Surveys';
 
 $conn = getConnection();
 $per_page = 8;
-$page = max(1,(int)($_GET['page'] ?? 1));
+$page = max(1, (int)($_GET['page'] ?? 1));
 $status_f = trim($_GET['status'] ?? '');
 $audience_f = trim($_GET['audience'] ?? '');
 
-$where = ['1=1']; $params=[]; $types='';
-if($status_f)   { $where[] = 'status = ?';           $params[] = $status_f;   $types.='s'; }
-if($audience_f) { $where[] = 'target_audience = ?';  $params[] = $audience_f; $types.='s'; }
-$whereSQL = implode(' AND ',$where);
+$where = ['1=1'];
+$params = [];
+$types = '';
+if ($status_f) {
+    $where[] = 'status = ?';
+    $params[] = $status_f;
+    $types .= 's';
+}
+if ($audience_f) {
+    $where[] = 'target_audience = ?';
+    $params[] = $audience_f;
+    $types .= 's';
+}
+$whereSQL = implode(' AND ', $where);
 
 $count_stmt = $conn->prepare("SELECT COUNT(*) as c FROM surveys WHERE $whereSQL");
-if($types) $count_stmt->bind_param($types,...$params);
+if ($types) $count_stmt->bind_param($types, ...$params);
 $count_stmt->execute();
 $total = $count_stmt->get_result()->fetch_assoc()['c'];
-$total_pages = max(1,ceil($total/$per_page));
-$offset = ($page-1)*$per_page;
+$total_pages = max(1, ceil($total / $per_page));
+$offset = ($page - 1) * $per_page;
 
 $stmt = $conn->prepare("
     SELECT s.*, 
@@ -31,8 +41,8 @@ $stmt = $conn->prepare("
     ORDER BY s.created_at DESC
     LIMIT ? OFFSET ?
 ");
-$all = array_merge($params,[$per_page,$offset]);
-$stmt->bind_param($types.'ii',...$all);
+$all = array_merge($params, [$per_page, $offset]);
+$stmt->bind_param($types . 'ii', ...$all);
 $stmt->execute();
 $surveys = $stmt->get_result();
 
@@ -55,20 +65,20 @@ require_once __DIR__ . '/../includes/header.php';
         <label class="qa-form-label">Status</label>
         <select id="f-status" class="qa-form-control">
             <option value="">All</option>
-            <option value="Draft"  <?= $status_f==='Draft' ?'selected':'' ?>>Draft</option>
-            <option value="Active" <?= $status_f==='Active'?'selected':'' ?>>Active</option>
-            <option value="Closed" <?= $status_f==='Closed'?'selected':'' ?>>Closed</option>
+            <option value="Draft" <?= $status_f === 'Draft' ? 'selected' : '' ?>>Draft</option>
+            <option value="Active" <?= $status_f === 'Active' ? 'selected' : '' ?>>Active</option>
+            <option value="Closed" <?= $status_f === 'Closed' ? 'selected' : '' ?>>Closed</option>
         </select>
     </div>
     <div style="min-width:160px">
         <label class="qa-form-label">Target Audience</label>
         <select id="f-audience" class="qa-form-control">
             <option value="">All Audiences</option>
-            <option value="Student"  <?= $audience_f==='Student'  ?'selected':'' ?>>Student</option>
-            <option value="Employee" <?= $audience_f==='Employee' ?'selected':'' ?>>Employee</option>
-            <option value="Employer" <?= $audience_f==='Employer' ?'selected':'' ?>>Employer</option>
-            <option value="Alumni"   <?= $audience_f==='Alumni'   ?'selected':'' ?>>Alumni</option>
-            <option value="General"  <?= $audience_f==='General'  ?'selected':'' ?>>General</option>
+            <option value="Student" <?= $audience_f === 'Student'  ? 'selected' : '' ?>>Student</option>
+            <option value="Employee" <?= $audience_f === 'Employee' ? 'selected' : '' ?>>Employee</option>
+            <option value="Employer" <?= $audience_f === 'Employer' ? 'selected' : '' ?>>Employer</option>
+            <option value="Alumni" <?= $audience_f === 'Alumni'   ? 'selected' : '' ?>>Alumni</option>
+            <option value="General" <?= $audience_f === 'General'  ? 'selected' : '' ?>>General</option>
         </select>
     </div>
     <div style="display:flex;align-items:flex-end;gap:8px">
@@ -79,189 +89,206 @@ require_once __DIR__ . '/../includes/header.php';
 
 <!-- Survey Cards -->
 <div class="row g-3 mb-3">
-<?php if($surveys->num_rows===0): ?>
-<div class="col-12"><div class="qa-card"><div class="empty-state"><i class="bi bi-clipboard-x"></i><p>No surveys found</p></div></div></div>
-<?php else: ?>
-<?php while($s=$surveys->fetch_assoc()): ?>
-<div class="col-md-6 col-xl-4">
-    <div class="qa-card h-100" style="padding:20px">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-            <span class="badge-status <?=
-                $s['status']==='Active' ? 'badge-active' :
-                ($s['status']==='Closed'? 'badge-closed' : 'badge-draft')
-            ?>"><?= $s['status'] ?></span>
-            <span class="badge-status badge-pending"><?= htmlspecialchars($s['target_audience']) ?></span>
+    <?php if ($surveys->num_rows === 0): ?>
+        <div class="col-12">
+            <div class="qa-card">
+                <div class="empty-state"><i class="bi bi-clipboard-x"></i>
+                    <p>No surveys found</p>
+                </div>
+            </div>
         </div>
-        <div class="fw-600 mb-1" style="font-size:0.95rem"><?= htmlspecialchars($s['title']) ?></div>
-        <div class="text-muted-qa mb-3" style="font-size:0.8rem">
-            <?= htmlspecialchars(substr($s['description']??'',0,90)) ?>
-        </div>
-        <div class="d-flex gap-3 mb-3" style="font-size:0.8rem">
-            <span><i class="bi bi-question-circle me-1 text-accent"></i><?= $s['q_count'] ?> questions</span>
-            <span><i class="bi bi-chat-dots me-1" style="color:var(--success)"></i><?= $s['r_count'] ?> responses</span>
-        </div>
-        <?php if($s['start_date']): ?>
-        <div class="text-muted-qa" style="font-size:0.76rem;margin-bottom:12px">
-            <i class="bi bi-calendar3 me-1"></i><?= $s['start_date'] ?> – <?= $s['end_date'] ?? '—' ?>
-        </div>
-        <?php endif; ?>
-        <div class="d-flex gap-2 flex-wrap">
-            <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick="viewQuestions(<?= $s['survey_id'] ?>, <?= htmlspecialchars(json_encode($s['title']),ENT_QUOTES) ?>)">
-                <i class="bi bi-list-ul"></i> Questions
-            </button>
-            <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick='editSurvey(<?= json_encode($s) ?>)'>
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn-qa btn-qa-success btn-qa-sm" onclick="showQR(<?= $s['survey_id'] ?>, '<?= htmlspecialchars($s['qr_token']) ?>')">
-                <i class="bi bi-qr-code"></i> QR
-            </button>
-            <button class="btn-qa btn-qa-danger btn-qa-sm" onclick="deleteSurvey(<?= $s['survey_id'] ?>)">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>
-    </div>
-</div>
-<?php endwhile; ?>
-<?php endif; ?>
+    <?php else: ?>
+        <?php while ($s = $surveys->fetch_assoc()): ?>
+            <div class="col-md-6 col-xl-4">
+                <div class="qa-card h-100" style="padding:20px">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge-status <?=
+                                                    $s['status'] === 'Active' ? 'badge-active' : ($s['status'] === 'Closed' ? 'badge-closed' : 'badge-draft')
+                                                    ?>"><?= $s['status'] ?></span>
+                        <span class="badge-status badge-pending"><?= htmlspecialchars($s['target_audience']) ?></span>
+                    </div>
+                    <div class="fw-600 mb-1" style="font-size:0.95rem"><?= htmlspecialchars($s['title']) ?></div>
+                    <div class="text-muted-qa mb-3" style="font-size:0.8rem">
+                        <?= htmlspecialchars(substr($s['description'] ?? '', 0, 90)) ?>
+                    </div>
+                    <div class="d-flex gap-3 mb-3" style="font-size:0.8rem">
+                        <span><i class="bi bi-question-circle me-1 text-accent"></i><?= $s['q_count'] ?> questions</span>
+                        <span><i class="bi bi-chat-dots me-1" style="color:var(--success)"></i><?= $s['r_count'] ?> responses</span>
+                    </div>
+                    <?php if ($s['start_date']): ?>
+                        <div class="text-muted-qa" style="font-size:0.76rem;margin-bottom:12px">
+                            <i class="bi bi-calendar3 me-1"></i><?= $s['start_date'] ?> – <?= $s['end_date'] ?? '—' ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick="viewQuestions(<?= $s['survey_id'] ?>, <?= htmlspecialchars(json_encode($s['title']), ENT_QUOTES) ?>)">
+                            <i class="bi bi-list-ul"></i> Questions
+                        </button>
+                        <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick='editSurvey(<?= json_encode($s) ?>)'>
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn-qa btn-qa-success btn-qa-sm" onclick="showQR(<?= $s['survey_id'] ?>, '<?= htmlspecialchars($s['qr_token']) ?>')">
+                            <i class="bi bi-qr-code"></i> QR
+                        </button>
+                        <button class="btn-qa btn-qa-danger btn-qa-sm" onclick="deleteSurvey(<?= $s['survey_id'] ?>)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <?php endwhile; ?>
+    <?php endif; ?>
 </div>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min($offset+1,$total) ?>–<?= min($offset+$per_page,$total) ?> of <?= $total ?> surveys</span>
+    <span class="text-muted-qa">Showing <?= min($offset + 1, $total) ?>–<?= min($offset + $per_page, $total) ?> of <?= $total ?> surveys</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
 <!-- ─── Create/Edit Survey Modal ─────────────────────── -->
 <div class="modal fade" id="surveyModal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="surveyModalTitle">New Survey</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="sv_id">
-        <div class="row g-3 mb-4">
-            <div class="col-12">
-                <label class="qa-form-label">Survey Title *</label>
-                <input type="text" id="sv_title" class="qa-form-control" placeholder="e.g. Student Experience Survey AY 2025-2026" maxlength="200">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="surveyModalTitle">New Survey</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="col-12">
-                <label class="qa-form-label">Description</label>
-                <textarea id="sv_desc" class="qa-form-control" rows="2" placeholder="Briefly describe the purpose of this survey…"></textarea>
-            </div>
-            <div class="col-md-3">
-                <label class="qa-form-label">Target Audience</label>
-                <select id="sv_audience" class="qa-form-control">
-                    <option>General</option><option>Student</option><option>Employee</option>
-                    <option>Employer</option><option>Alumni</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="qa-form-label">Status</label>
-                <select id="sv_status" class="qa-form-control">
-                    <option>Draft</option><option>Active</option><option>Closed</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="qa-form-label">Start Date</label>
-                <input type="date" id="sv_start" class="qa-form-control">
-            </div>
-            <div class="col-md-3">
-                <label class="qa-form-label">End Date</label>
-                <input type="date" id="sv_end" class="qa-form-control">
-            </div>
-        </div>
+            <div class="modal-body">
+                <input type="hidden" id="sv_id">
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <label class="qa-form-label">Survey Title *</label>
+                        <input type="text" id="sv_title" class="qa-form-control" placeholder="e.g. Student Experience Survey AY 2025-2026" maxlength="200">
+                    </div>
+                    <div class="col-12">
+                        <label class="qa-form-label">Description</label>
+                        <textarea id="sv_desc" class="qa-form-control" rows="2" placeholder="Briefly describe the purpose of this survey…"></textarea>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="qa-form-label">Target Audience</label>
+                        <select id="sv_audience" class="qa-form-control">
+                            <option>General</option>
+                            <option>Student</option>
+                            <option>Employee</option>
+                            <option>Employer</option>
+                            <option>Alumni</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="qa-form-label">Status</label>
+                        <select id="sv_status" class="qa-form-control">
+                            <option>Draft</option>
+                            <option>Active</option>
+                            <option>Closed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="qa-form-label">Start Date</label>
+                        <input type="date" id="sv_start" class="qa-form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="qa-form-label">End Date</label>
+                        <input type="date" id="sv_end" class="qa-form-control">
+                    </div>
+                </div>
 
-        <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:20px">
-            <!-- Respondent Info Settings -->
-            <div style="margin-bottom:20px">
-                <div style="font-weight:600;font-size:1rem;margin-bottom:12px">Respondent Information</div>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border)">
-                            <input type="checkbox" id="sv_require_name" style="cursor:pointer;width:18px;height:18px">
-                            <label style="margin:0;cursor:pointer;flex:1">
-                                <strong>Require Respondent Name</strong>
-                                <div class="text-muted-qa" style="font-size:0.8rem;margin-top:2px">Ask respondents to provide their name</div>
-                            </label>
+                <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:20px">
+                    <!-- Respondent Info Settings -->
+                    <div style="margin-bottom:20px">
+                        <div style="font-weight:600;font-size:1rem;margin-bottom:12px">Respondent Information</div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border)">
+                                    <input type="checkbox" id="sv_require_name" style="cursor:pointer;width:18px;height:18px">
+                                    <label style="margin:0;cursor:pointer;flex:1">
+                                        <strong>Require Respondent Name</strong>
+                                        <div class="text-muted-qa" style="font-size:0.8rem;margin-top:2px">Ask respondents to provide their name</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border)">
+                                    <input type="checkbox" id="sv_require_email" style="cursor:pointer;width:18px;height:18px">
+                                    <label style="margin:0;cursor:pointer;flex:1">
+                                        <strong>Require Email Address</strong>
+                                        <div class="text-muted-qa" style="font-size:0.8rem;margin-top:2px">Ask respondents to provide their email</div>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-light);border-radius:var(--radius);border:1px solid var(--border)">
-                            <input type="checkbox" id="sv_require_email" style="cursor:pointer;width:18px;height:18px">
-                            <label style="margin:0;cursor:pointer;flex:1">
-                                <strong>Require Email Address</strong>
-                                <div class="text-muted-qa" style="font-size:0.8rem;margin-top:2px">Ask respondents to provide their email</div>
-                            </label>
+
+                    <div style="border-top:1px solid var(--border);padding-top:20px">
+                        <!-- Questions builder -->
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <div style="font-weight:600;font-size:1rem;margin-bottom:4px">Questionnaires</div>
+                                <div class="text-muted-qa" style="font-size:0.85rem">Add questions for your survey below</div>
+                            </div>
+                            <button class="btn-qa btn-qa-primary btn-qa-sm" onclick="addQuestion()" style="white-space:nowrap">
+                                <i class="bi bi-plus-circle"></i> Add Question
+                            </button>
+                        </div>
+
+                        <div id="questionsList" style="max-height:400px;overflow-y:auto;padding-right:8px"></div>
+                        <div id="noQuestionsMsg" class="empty-state" style="padding:40px;border:2px dashed var(--accent);border-radius:var(--radius);text-align:center">
+                            <i class="bi bi-question-circle" style="font-size:2rem;color:var(--accent);opacity:0.3"></i>
+                            <p style="margin-top:12px;color:var(--accent);opacity:0.5">No questions added yet</p>
+                            <p style="font-size:0.8rem;color:var(--accent);opacity:0.4">Click "Add Question" to create your first question</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div style="border-top:1px solid var(--border);padding-top:20px">
-                <!-- Questions builder -->
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div>
-                        <div style="font-weight:600;font-size:1rem;margin-bottom:4px">Questionnaires</div>
-                        <div class="text-muted-qa" style="font-size:0.85rem">Add questions for your survey below</div>
-                    </div>
-                    <button class="btn-qa btn-qa-primary btn-qa-sm" onclick="addQuestion()" style="white-space:nowrap">
-                        <i class="bi bi-plus-circle"></i> Add Question
-                    </button>
-                </div>
-
-                <div id="questionsList" style="max-height:400px;overflow-y:auto;padding-right:8px"></div>
-                <div id="noQuestionsMsg" class="empty-state" style="padding:40px;border:2px dashed var(--accent);border-radius:var(--radius);text-align:center">
-                    <i class="bi bi-question-circle" style="font-size:2rem;color:var(--accent);opacity:0.3"></i>
-                    <p style="margin-top:12px;color:var(--accent);opacity:0.5">No questions added yet</p>
-                    <p style="font-size:0.8rem;color:var(--accent);opacity:0.4">Click "Add Question" to create your first question</p>
-                </div>
+            <div class="modal-footer">
+                <button class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn-qa btn-qa-primary" onclick="saveSurvey()"><i class="bi bi-save"></i> Save Survey</button>
             </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-qa btn-qa-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button class="btn-qa btn-qa-primary" onclick="saveSurvey()"><i class="bi bi-save"></i> Save Survey</button>
-      </div>
     </div>
-  </div>
 </div>
 
 <!-- Questions viewer modal -->
 <div class="modal fade" id="questionsViewModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="qvTitle">Questions</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="qvBody">Loading…</div>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qvTitle">Questions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="qvBody">Loading…</div>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- QR Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content text-center">
-      <div class="modal-header"><h5 class="modal-title">Survey QR Code</h5>
-        <button class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <div class="text-muted-qa mb-3" id="qrModalDesc"></div>
-        <div class="qr-wrapper mx-auto mb-3" style="max-width:200px" id="qrContainer"></div>
-        <div class="text-muted-qa small-mono" id="qrUrl" style="word-break:break-all;font-size:0.72rem"></div>
-      </div>
-      <div class="modal-footer justify-content-center">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content text-center">
+            <div class="modal-header">
+                <h5 class="modal-title">Survey QR Code</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-muted-qa mb-3" id="qrModalDesc"></div>
+                <div class="qr-wrapper mx-auto mb-3" style="max-width:200px" id="qrContainer"></div>
+                <div class="input-group mb-2">
+                    <span class="text-muted-qa small-mono" id="qrUrl" style="word-break:break-all;font-size:0.72rem;flex:1;"></span>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="copyQrUrl()" id="copyQrUrlBtn" style="flex-shrink:0;" title="Copy URL">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
                 <button id="btnExportQR" class="btn-qa btn-qa-primary btn-qa-sm" onclick="exportQRPng()" disabled><i class="bi bi-download"></i> Export PNG</button>
-      </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <?php
 $extra_js = '<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
-$(function(){ buildPagination("paginationContainer",'.$page.','.$total_pages.',"goPage"); });
+$(function(){ buildPagination("paginationContainer",' . $page . ',' . $total_pages . ',"goPage"); });
 
 function goPage(p){ const url=new URL(window.location); url.searchParams.set("page",p); window.location=url; }
 function applyFilters(){ const url=new URL(window.location); url.searchParams.set("status",$("#f-status").val()); url.searchParams.set("audience",$("#f-audience").val()); url.searchParams.set("page",1); window.location=url; }
@@ -472,6 +499,17 @@ function showQR(surveyId, token){
         $("#qrContainer").html(`<div class="text-danger" style="font-size:0.8rem">Server error while preparing QR code.</div>`);
         $("#btnExportQR").prop("disabled", true);
     });
+}
+
+function copyQrUrl() {
+    const urlText = $("#qrUrl").text();
+    if(urlText) {
+        navigator.clipboard.writeText(urlText);
+        $("#copyQrUrlBtn").html(`<i class="bi bi-check"></i>`);  // Correct - single quotes outside
+        setTimeout(function() {
+            $("#copyQrUrlBtn").html(`<i class="bi bi-clipboard"></i>`);
+        }, 1500);
+    }
 }
 
 function exportQRPng(){

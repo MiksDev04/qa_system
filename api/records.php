@@ -52,7 +52,7 @@ switch ($action) {
         $countStmt->execute();
         $total = (int)$countStmt->get_result()->fetch_assoc()['c'];
 
-        $sql = 'SELECT r.record_id, r.indicator_id, r.year, r.semester, r.actual_value, r.remarks, r.recorded_by, r.source_system, r.external_sync_id, r.created_at, r.updated_at, i.name AS indicator_name, i.target_value, i.unit
+        $sql = 'SELECT r.record_id, r.indicator_id, r.year, r.semester, r.actual_value, r.remarks, r.recorded_by, r.created_at, r.updated_at, i.name AS indicator_name, i.target_value, i.unit
                 FROM qa_records r
                 JOIN qa_indicators i ON r.indicator_id = i.indicator_id
                 WHERE ' . implode(' AND ', $where) . '

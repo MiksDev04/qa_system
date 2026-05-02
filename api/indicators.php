@@ -69,14 +69,70 @@ switch ($action) {
 
     // ─── LIST (GET) ───────────────────────────────────────
     case 'list':
-        $status = $_GET['status'] ?? '';
-        $w = ['1=1']; $p=[]; $t='';
-        if($status){ $w[]='status=?'; $p[]=$status; $t.='s'; }
-        $stmt = $conn->prepare("SELECT * FROM qa_indicators WHERE ".implode(' AND ',$w)." ORDER BY category,name");
-        if($t) $stmt->bind_param($t,...$p);
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $search = trim($_GET['search'] ?? '');
+        $category = trim($_GET['category'] ?? '');
+        $status = trim($_GET['status'] ?? '');
+        $per_page = 10;
+
+        // Build WHERE clause
+        $where = ['1=1'];
+        $params = [];
+        $types = '';
+
+        if ($search !== '') {
+            $where[] = '(name LIKE ? OR description LIKE ?)';
+            $s = "%$search%";
+            $params[] = $s;
+            $params[] = $s;
+            $types .= 'ss';
+        }
+        if ($category !== '') {
+            $where[] = 'category = ?';
+            $params[] = $category;
+            $types .= 's';
+        }
+        if ($status !== '') {
+            $where[] = 'status = ?';
+            $params[] = $status;
+            $types .= 's';
+        }
+
+        $whereSQL = implode(' AND ', $where);
+
+        // Count total
+        $count_stmt = $conn->prepare("SELECT COUNT(*) as c FROM qa_indicators WHERE $whereSQL");
+        if ($types) $count_stmt->bind_param($types, ...$params);
+        $count_stmt->execute();
+        $total = $count_stmt->get_result()->fetch_assoc()['c'];
+        $total_pages = max(1, ceil($total / $per_page));
+        $offset = ($page - 1) * $per_page;
+
+        // Fetch data
+        $stmt = $conn->prepare("SELECT * FROM qa_indicators WHERE $whereSQL ORDER BY category, name LIMIT ? OFFSET ?");
+        $all_params = array_merge($params, [$per_page, $offset]);
+        $all_types = $types . 'ii';
+        $stmt->bind_param($all_types, ...$all_params);
         $stmt->execute();
-        $rows=[]; $res=$stmt->get_result(); while($r=$res->fetch_assoc()) $rows[]=$r;
-        respond(true, 'OK', ['data'=>$rows]);
+        $rows = [];
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+        }
+
+        $showing_from = min($offset + 1, $total);
+        $showing_to = min($offset + $per_page, $total);
+
+        respond(true, 'OK', [
+            'data' => $rows,
+            'total' => $total,
+            'total_pages' => $total_pages,
+            'current_page' => $page,
+            'per_page' => $per_page,
+            'offset' => $offset,
+            'showing_from' => $showing_from,
+            'showing_to' => $showing_to
+        ]);
         break;
 
     default:

@@ -65,7 +65,7 @@ require_once __DIR__ . '/../includes/header.php';
         <h1><i class="bi bi-journal-text me-2 text-accent"></i>QA Records</h1>
         <p>Track actual measured values against KPI targets</p>
     </div>
-    <button class="btn-qa btn-qa-primary" data-bs-toggle="modal" data-bs-target="#recModal" onclick="openAddRecord()">
+    <button class="btn-qa btn-qa-primary" data-bs-toggle="modal" data-bs-target="#recModal" id="addRecordBtn">
         <i class="bi bi-plus-lg"></i> Add Record
     </button>
 </div>
@@ -100,8 +100,8 @@ require_once __DIR__ . '/../includes/header.php';
         </select>
     </div>
     <div style="display:flex;align-items:flex-end;gap:8px">
-        <button class="btn-qa btn-qa-primary" onclick="applyFilters()"><i class="bi bi-funnel"></i> Filter</button>
-        <a href="records.php" class="btn-qa btn-qa-secondary"><i class="bi bi-x-circle"></i> Clear</a>
+        <button type="button" class="btn-qa btn-qa-primary btn-apply-filters"><i class="bi bi-funnel"></i> Filter</button>
+        <button type="button" class="btn-qa btn-qa-secondary btn-clear-filters"><i class="bi bi-x-circle"></i> Clear</button>
     </div>
 </div>
 
@@ -180,14 +180,14 @@ require_once __DIR__ . '/../includes/header.php';
                             <td class="text-muted-qa"><?= htmlspecialchars($rec['recorded_by'] ?? 'N/A') ?></td>
                             <td>
                                 <div class="d-flex gap-1">
-                                    <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon"
-                                        onclick='viewRecord(<?= json_encode($rec) ?>)'
+                                    <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon btn-view-record"
+                                        data-record="<?= htmlspecialchars(json_encode($rec)) ?>"
                                         title="View"><i class="bi bi-eye"></i></button>
-                                    <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon"
-                                        onclick='editRecord(<?= json_encode($rec) ?>)'
+                                    <button class="btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon btn-edit-record"
+                                        data-record="<?= htmlspecialchars(json_encode($rec)) ?>"
                                         title="Edit"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn-qa btn-qa-danger btn-qa-sm btn-qa-icon"
-                                        onclick="deleteRecord(<?= $rec['record_id'] ?>)"
+                                    <button class="btn-qa btn-qa-danger btn-qa-sm btn-qa-icon btn-delete-record"
+                                        data-record-id="<?= $rec['record_id'] ?>"
                                         title="Delete"><i class="bi bi-trash"></i></button>
                                 </div>
                             </td>
@@ -405,76 +405,107 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php
-$extra_js = <<<JS
-<script>
-// External Data JSON definitions
+$extra_js = "<script>
 const externalDataSources = {
     LMS: {
-        system: "Learning Management System (LMS)",
+        system: 'Learning Management System (LMS)',
         data: [],
         kpi_mapping: {
-            "avg_grade": { indicator_id: 1, unit: "%", target_value: 85.00 },
-            "submission_rate": { indicator_id: 6, unit: "%", target_value: 90.00 },
-            "quiz_pass_rate": { indicator_id: 8, unit: "%", target_value: 85.00 }
+            'avg_grade': { indicator_id: 1, unit: '%', target_value: 85.00 },
+            'submission_rate': { indicator_id: 6, unit: '%', target_value: 90.00 },
+            'quiz_pass_rate': { indicator_id: 8, unit: '%', target_value: 85.00 }
         }
     },
     HRIS: {
-        system: "Human Resources Information System (HRIS)",
+        system: 'Human Resources Information System (HRIS)',
         data: [
             {
-                "academic_period": "2024-1st",
-                "year": 2024,
-                "semester": "1st",
-                "metrics": {
-                    "faculty_evaluation_average": 82.50,
-                    "research_publications_count": 8
+                'academic_period': '2024-1st',
+                'year': 2024,
+                'semester': '1st',
+                'metrics': {
+                    'faculty_evaluation_average': 82.50,
+                    'research_publications_count': 8
                 },
-                "remarks": "Sample data"
+                'remarks': 'Sample data'
             }
         ],
         kpi_mapping: {
-            "faculty_evaluation_average": { indicator_id: 4, unit: "%", target_value: 85.00 },
-            "research_publications_count": { indicator_id: 5, unit: "count", target_value: 10.00 }
+            'faculty_evaluation_average': { indicator_id: 4, unit: '%', target_value: 85.00 },
+            'research_publications_count': { indicator_id: 5, unit: 'count', target_value: 10.00 }
         }
     },
     FACULTY_EVAL: {
-        system: "Faculty Evaluation & Performance System",
+        system: 'Faculty Evaluation & Performance System',
         data: [
             {
-                "academic_period": "2024-1st",
-                "year": 2024,
-                "semester": "1st",
-                "metrics": {
-                    "faculty_evaluation_average": 82.80,
-                    "employer_satisfaction_with_graduates": 79.40
+                'academic_period': '2024-1st',
+                'year': 2024,
+                'semester': '1st',
+                'metrics': {
+                    'faculty_evaluation_average': 82.80,
+                    'employer_satisfaction_with_graduates': 79.40
                 },
-                "remarks": "Sample data"
+                'remarks': 'Sample data'
             }
         ],
         kpi_mapping: {
-            "faculty_evaluation_average": { indicator_id: 4, unit: "%", target_value: 85.00 },
-            "employer_satisfaction_with_graduates": { indicator_id: 7, unit: "%", target_value: 80.00 }
+            'faculty_evaluation_average': { indicator_id: 4, unit: '%', target_value: 85.00 },
+            'employer_satisfaction_with_graduates': { indicator_id: 7, unit: '%', target_value: 80.00 }
         }
     }
 };
 
-function resetModalForm() {
-    document.getElementById('rec_id').value = '';
-    document.getElementById('rec_indicator').value = '';
-    document.getElementById('rec_actual').value = '';
-    document.getElementById('rec_remarks').value = '';
-    document.getElementById('rec_by').value = '';
-    document.getElementById('rec_semester').value = '1st';
-    document.getElementById('rec_year').value = new Date().getFullYear();
-}
-$(function(){ 
-    buildPagination("paginationContainer", $page, $total_pages, "goPage"); 
+// Clear filters function
+function clearFilters() {
+    // Reset all filter dropdowns to empty/default values
+    $('#f-ind').val('');
+    $('#f-year').val('');
+    $('#f-sem').val('');
     
-    // Fix modal backdrop
-    $('#recModal').on('hidden.bs.modal', function (e) {
+    // Reload the table with cleared filters (page 1)
+    loadRecordsTable(1);
+}
+
+// Attach clear button handler
+$(document).on('click', '.btn-clear-filters', function(e) {
+    e.preventDefault();
+    console.log('Clear filters button clicked');
+    clearFilters();
+});
+
+function resetModalForm() {
+    \$('#rec_id,#rec_indicator,#rec_actual,#rec_remarks,#rec_by').val('');
+    \$('#rec_semester').val('1st');
+    \$('#rec_year').val(new Date().getFullYear());
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+\$(function(){ 
+    buildPagination('paginationContainer', $page, $total_pages, 'goPage');
+    attachRecordHandlers();
+    
+    \$('#addRecordBtn').on('click', function() {
+        openAddRecord();
+    });
+    
+    \$('.btn-apply-filters').on('click', function(e) {
+        e.preventDefault();
+        console.log('Filter button clicked');
+        applyFilters(1);
+    });
+    
+    \$('#recModal').on('show.bs.modal', function() {
+        // Modal is about to show - form will be populated by editRecord/openAddRecord
+    }).on('hidden.bs.modal', function (e) {
         if (e.target) {
-            $('.modal-backdrop').remove();
-            $('body').removeClass('modal-open');
+            \$('.modal-backdrop').remove();
+            \$('body').removeClass('modal-open');
             document.body.style.overflow = '';
             document.body.style.paddingRight = '';
         }
@@ -482,68 +513,174 @@ $(function(){
     });
 });
 
-function goPage(p){
-    const url = new URL(window.location);
-    url.searchParams.set("page", p);
-    window.location = url;
+function loadRecordsTable(page = 1) {
+    const indicator_id = \$('#f-ind').val();
+    const year = \$('#f-year').val();
+    const semester = \$('#f-sem').val();
+    
+    console.log('Loading records with filters:', { page, indicator_id, year, semester });
+    
+    \$.ajax({
+        url: '../api/records.php',
+        type: 'GET',
+        data: {
+            action: 'list',
+            page: page,
+            indicator_id: indicator_id,
+            year: year,
+            semester: semester,
+            per_page: 10
+        },
+        dataType: 'json',
+        success: function(response) {
+            console.log('Records loaded successfully:', response);
+            if (response.status === 'success') {
+                const records = response.data;
+                const meta = response.meta;
+                let html = '';
+                
+                if (records.length === 0) {
+                    html = '<tr><td colspan=\"9\"><div class=\"empty-state\"><i class=\"bi bi-inbox\"></i><p>No records found</p></div></td></tr>';
+                } else {
+                    records.forEach((rec, index) => {
+                        const n = (meta.page - 1) * meta.per_page + index + 1;
+                        const met = rec.actual_value >= rec.target_value;
+                        const variance = rec.actual_value - rec.target_value;
+                        const pct = rec.target_value > 0 ? (rec.actual_value / rec.target_value) * 100 : 0;
+                        
+                        let statusClass = 'badge-inactive';
+                        let statusIcon = 'bi-dash-circle-fill';
+                        let statusText = 'No Target';
+                        let barClass = 'warning';
+                        
+                        if (rec.target_value > 0) {
+                            if (pct >= 100) {
+                                statusClass = 'badge-active';
+                                statusIcon = 'bi-check-circle-fill';
+                                statusText = 'Met Target';
+                                barClass = 'success';
+                            } else {
+                                statusClass = 'badge-closed';
+                                statusIcon = 'bi-x-circle-fill';
+                                statusText = 'Below Target';
+                                barClass = 'danger';
+                            }
+                        }
+                        
+                        const recEscaped = JSON.stringify(rec).replace(/\\\\/g, '\\\\').replace(/\"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        
+                        html += '<tr>';
+                        html += '<td class=\"text-muted-qa mono\">' + n + '</td>';
+                        html += '<td class=\"fw-600\">' + escapeHtml(rec.indicator_name) + '</td>';
+                        html += '<td class=\"mono\">' + rec.semester + ' ' + rec.year + '</td>';
+                        html += '<td>';
+                        html += '<span style=\"color:var(--' + (met ? 'success' : 'danger') + ');font-weight:600\">' + parseFloat(rec.actual_value).toFixed(2) + '</span>';
+                        html += '<span class=\"text-muted-qa\"> ' + escapeHtml(rec.unit) + '</span>';
+                        html += '<div class=\"qa-progress\" style=\"width:90px\"><div class=\"qa-progress-bar ' + barClass + '\" style=\"width:' + Math.min(100, Math.round(pct)) + '%\"></div></div>';
+                        html += '</td>';
+                        html += '<td class=\"text-muted-qa\">' + parseFloat(rec.target_value).toFixed(2) + ' ' + escapeHtml(rec.unit) + '</td>';
+                        html += '<td style=\"color:var(--' + (variance >= 0 ? 'success' : 'danger') + ');\">' + ((variance >= 0 ? '+' : '') + parseFloat(variance).toFixed(2)) + '</td>';
+                        html += '<td><span class=\"badge-status ' + statusClass + '\"><i class=\"bi ' + statusIcon + '\"></i> ' + statusText + '</span></td>';
+                        html += '<td class=\"text-muted-qa\">' + escapeHtml(rec.recorded_by || 'N/A') + '</td>';
+                        html += '<td>';
+                        html += '<div class=\"d-flex gap-1\">';
+                        html += '<button class=\"btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon btn-view-record\" data-record=\"' + recEscaped + '\" title=\"View\"><i class=\"bi bi-eye\"></i></button>';
+                        html += '<button class=\"btn-qa btn-qa-secondary btn-qa-sm btn-qa-icon btn-edit-record\" data-record=\"' + recEscaped + '\" title=\"Edit\"><i class=\"bi bi-pencil\"></i></button>';
+                        html += '<button class=\"btn-qa btn-qa-danger btn-qa-sm btn-qa-icon btn-delete-record\" data-record-id=\"' + rec.record_id + '\" title=\"Delete\"><i class=\"bi bi-trash\"></i></button>';
+                        html += '</div>';
+                        html += '</td>';
+                        html += '</tr>';
+                    });
+                }
+                
+                \$('table.qa-table tbody').html(html);
+                buildPagination('paginationContainer', meta.page, meta.total_pages, 'goPage');
+                attachRecordHandlers();
+                
+                // Update showing count
+                const from = records.length === 0 ? 0 : (meta.page - 1) * meta.per_page + 1;
+                const to = Math.min((meta.page - 1) * meta.per_page + records.length, meta.total);
+                \$('.d-flex.justify-content-between.align-items-center').first().find('.text-muted-qa').text('Showing ' + from + '-' + to + ' of ' + meta.total + ' records');
+            }
+        },
+        error: function(err) {
+            console.error('Error loading records:', err);
+            console.error('Status:', err.status, 'Status Text:', err.statusText);
+            console.error('Response Text:', err.responseText);
+            alert('Error loading records. Check console for details.');
+        }
+    });
 }
 
-function applyFilters(){
-    const url = new URL(window.location);
-    url.searchParams.set("indicator_id", $("#f-ind").val());
-    url.searchParams.set("year", $("#f-year").val());
-    url.searchParams.set("semester", $("#f-sem").val());
-    url.searchParams.set("page", 1);
-    window.location = url;
+function attachRecordHandlers() {
+    \$(document).off('click', '.btn-view-record').on('click', '.btn-view-record', function() {
+        const data = JSON.parse(\$(this).attr('data-record'));
+        viewRecord(data);
+    });
+    \$(document).off('click', '.btn-edit-record').on('click', '.btn-edit-record', function() {
+        const data = JSON.parse(\$(this).attr('data-record'));
+        editRecord(data);
+    });
+    \$(document).off('click', '.btn-delete-record').on('click', '.btn-delete-record', function() {
+        const id = \$(this).attr('data-record-id');
+        deleteRecord(id);
+    });
+}
+
+function goPage(p){
+    loadRecordsTable(p);
+}
+
+function applyFilters(page = 1){
+    console.log('applyFilters called with page:', page);
+    loadRecordsTable(page);
 }
 
 function openAddRecord(){
     resetModalForm();
-    document.getElementById("recModalTitle").innerText = "Add QA Record";
-    var myModal = new bootstrap.Modal(document.getElementById('recModal'));
-    myModal.show();
+    \$('#recModalTitle').text('Add QA Record');
+    new bootstrap.Modal(document.getElementById('recModal')).show();
 }
 
 function editRecord(data){
-    $("#recModalTitle").text("Edit QA Record");
-    $("#rec_id").val(data.record_id);
-    $("#rec_indicator").val(data.indicator_id);
-    $("#rec_year").val(data.year);
-    $("#rec_semester").val(data.semester);
-    $("#rec_actual").val(data.actual_value);
-    $("#rec_by").val(data.recorded_by);
-    $("#rec_remarks").val(data.remarks);
-    new bootstrap.Modal(document.getElementById("recModal")).show();
+    \$('#recModalTitle').text('Edit QA Record');
+    \$('#rec_id').val(data.record_id);
+    \$('#rec_indicator').val(data.indicator_id);
+    \$('#rec_year').val(data.year);
+    \$('#rec_semester').val(data.semester);
+    \$('#rec_actual').val(data.actual_value);
+    \$('#rec_by').val(data.recorded_by);
+    \$('#rec_remarks').val(data.remarks);
+    new bootstrap.Modal(document.getElementById('recModal')).show();
 }
 
 function viewRecord(data){
-    $("#view_rec_indicator").text(data.indicator_name);
-    $("#view_rec_period").text(data.semester + " " + data.year);
-    $("#view_rec_actual").text(data.actual_value + " " + data.unit);
-    $("#view_rec_target").text(data.target_value + " " + data.unit);
+    \$('#view_rec_indicator').text(data.indicator_name);
+    \$('#view_rec_period').text(data.semester + ' ' + data.year);
+    \$('#view_rec_actual').text(data.actual_value + ' ' + data.unit);
+    \$('#view_rec_target').text(data.target_value + ' ' + data.unit);
     const variance = data.actual_value - data.target_value;
-    const varianceText = (variance >= 0 ? "+" : "") + variance.toFixed(2);
-    const varianceHTML = variance >= 0 ? `<span style="color: var(--success)">\${varianceText}</span>` : `<span style="color: var(--danger)">\${varianceText}</span>`;
-    $("#view_rec_variance").html(varianceHTML);
+    const varianceText = (variance >= 0 ? '+' : '') + variance.toFixed(2);
+    const varianceHTML = variance >= 0 ? '<span style=\"color: var(--success)\">' + varianceText + '</span>' : '<span style=\"color: var(--danger)\">' + varianceText + '</span>';
+    \$('#view_rec_variance').html(varianceHTML);
 
     const target = Number(data.target_value || 0);
     const actual = Number(data.actual_value || 0);
     const pct = target > 0 ? (actual / target) * 100 : 0;
-    let statusBadge = "";
+    let statusBadge = '';
     if (target <= 0) {
-        statusBadge = `<span class="badge-status badge-inactive"><i class="bi bi-dash-circle-fill"></i> No Target</span>`;
+        statusBadge = '<span class=\"badge-status badge-inactive\"><i class=\"bi bi-dash-circle-fill\"></i> No Target</span>';
     } else if (pct >= 100) {
-        statusBadge = `<span class="badge-status badge-active"><i class="bi bi-check-circle-fill"></i> Met Target</span>`;
+        statusBadge = '<span class=\"badge-status badge-active\"><i class=\"bi bi-check-circle-fill\"></i> Met Target</span>';
     } else {
-        statusBadge = `<span class="badge-status badge-closed"><i class="bi bi-x-circle-fill"></i> Below Target</span>`;
+        statusBadge = '<span class=\"badge-status badge-closed\"><i class=\"bi bi-x-circle-fill\"></i> Below Target</span>';
     }
-
-    $("#view_rec_status").html(statusBadge);
-    $("#view_rec_by").text(data.recorded_by || "N/A");
-    const dateStr = new Date(data.created_at).toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"});
-    $("#view_rec_date").text(dateStr);
-    $("#view_rec_remarks").text(data.remarks || "N/A");
-    new bootstrap.Modal(document.getElementById("viewRecModal")).show();
+    \$('#view_rec_status').html(statusBadge);
+    \$('#view_rec_by').text(data.recorded_by || 'N/A');
+    const dateStr = new Date(data.created_at).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+    \$('#view_rec_date').text(dateStr);
+    \$('#view_rec_remarks').text(data.remarks || 'N/A');
+    new bootstrap.Modal(document.getElementById('viewRecModal')).show();
 }
 
 function saveRecord(){
@@ -553,38 +690,28 @@ function saveRecord(){
     let indicator_id, actual_value, year, semester, recorded_by, remarks;
     
     if (isManual) {
-        indicator_id = $("#rec_indicator").val();
-        actual_value = $("#rec_actual").val();
-        year = $("#rec_year").val();
-        semester = $("#rec_semester").val();
-        recorded_by = $("#rec_by").val() || "QA System";
-        remarks = $("#rec_remarks").val() || "";
+        indicator_id = \$('#rec_indicator').val();
+        actual_value = \$('#rec_actual').val();
+        year = \$('#rec_year').val();
+        semester = \$('#rec_semester').val();
+        recorded_by = \$('#rec_by').val() || 'QA System';
+        remarks = \$('#rec_remarks').val() || '';
     } else {
-        indicator_id = $("#ext_indicator").val();
-        actual_value = $("#ext_actual").val();
-        year = $("#ext_year").val();
-        semester = $("#ext_semester").val();
-        recorded_by = "QA System";
-        remarks = "";
+        indicator_id = \$('#ext_indicator').val();
+        actual_value = \$('#ext_actual').val();
+        year = \$('#ext_year').val();
+        semester = \$('#ext_semester').val();
+        recorded_by = 'QA System';
+        remarks = '';
     }
     
-    if(!indicator_id) { 
-        alert("Please select an Indicator."); 
-        return; 
-    }
-    if(!year || year < 2000 || year > 2099) { 
-        alert("Please enter a valid Year."); 
-        return; 
-    }
-    if(!actual_value && actual_value !== 0) { 
-        alert("Please enter an Actual Value."); 
-        return; 
-    }
+    if(!indicator_id) { alert('Please select an Indicator.'); return; }
+    if(!year || year < 2000 || year > 2099) { alert('Please enter a valid Year.'); return; }
+    if(!actual_value && actual_value !== 0) { alert('Please enter an Actual Value.'); return; }
 
-    const isUpdate = $("#rec_id").val();
-    
+    const isUpdate = \$('#rec_id').val();
     const payload = {
-        action: isUpdate ? "update" : "create",
+        action: isUpdate ? 'update' : 'create',
         indicator_id: indicator_id,
         year: year,
         semester: semester,
@@ -592,133 +719,137 @@ function saveRecord(){
         recorded_by: recorded_by,
         remarks: remarks
     };
-    
-    if (isUpdate) {
-        payload.record_id = $("#rec_id").val();
-    }
-    
-    console.log("Saving record:", payload);
-    
-    qaAjax("../api/records.php", payload, 
-    function(res) {
-        console.log("Success response:", res);
-        location.reload();
-    },
-    function(err) {
-        console.error("Error response object:", err);
-        let errMsg = "Failed to save record.";
-        if (err && typeof err === 'object' && err.message) {
-            errMsg = err.message;
+    if (isUpdate) payload.record_id = \$('#rec_id').val();
+
+    \$.ajax({
+        url: '../api/records.php',
+        type: 'POST',
+        data: payload,
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                bootstrap.Modal.getInstance(document.getElementById('recModal')).hide();
+                loadRecordsTable(1);
+            } else {
+                alert('Error: ' + (response.message || 'Failed to save record'));
+            }
+        },
+        error: function(err) {
+            console.error('Save error:', err);
+            alert('Error saving record');
         }
-        alert(errMsg);
     });
 }
 
 function deleteRecord(id){
-    confirmDelete("../api/records.php", {action:"delete", record_id:id}, () => location.reload());
+    if (!confirm('Are you sure you want to delete this record?')) return;
+    \$.ajax({
+        url: '../api/records.php',
+        type: 'POST',
+        data: { action: 'delete', record_id: id },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                loadRecordsTable(1);
+            } else {
+                alert('Error: ' + (response.message || 'Failed to delete record'));
+            }
+        },
+        error: function(err) {
+            console.error('Delete error:', err);
+            alert('Error deleting record');
+        }
+    });
 }
 
-async function loadExternalData() {
-    const source = $("#ext_source").val();
+function loadExternalData() {
+    const source = \$('#ext_source').val();
     if (!source) {
-        $("#ext_metric").html("<option value=''>-- Choose Metric --</option>");
-        $("#ext_data_container").hide();
-        $("#ext_indicator").val("");
-        $("#ext_year").val("");
-        $("#ext_semester").val("1st");
-        $("#ext_actual").val("");
+        \$('#ext_metric').html('<option value=\"\">-- Choose Metric --</option>');
+        \$('#ext_data_container').hide();
+        \$('#ext_indicator,#ext_year,#ext_actual').val('');
+        \$('#ext_semester').val('1st');
         return;
     }
 
     if (source !== 'LMS') {
         const sourceData = externalDataSources[source];
         if (!sourceData || !sourceData.data || sourceData.data.length === 0) {
-            alert("No data available for this system.");
+            alert('No data available for this system.');
             return;
         }
-        
         const metricSet = new Set();
         sourceData.data.forEach(record => {
             Object.keys(record.metrics).forEach(metric => metricSet.add(metric));
         });
-        
-        let options = '<option value="">-- Choose Metric --</option>';
+        let options = '<option value=\"\">-- Choose Metric --</option>';
         metricSet.forEach(metric => {
-            const displayName = metric.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            options += `<option value="\${metric}">\${displayName}</option>`;
+            const displayName = metric.replace(/_/g, ' ').replace(/\\\b\\\w/g, l => l.toUpperCase());
+            options += '<option value=\"' + metric + '\">' + displayName + '</option>';
         });
-        $("#ext_metric").html(options);
-        $("#ext_data_container").hide();
+        \$('#ext_metric').html(options);
+        \$('#ext_data_container').hide();
         return;
     }
-    
-    try {
-        $("#ext_metric").html('<option value="">Loading LMS data...</option>');
-        
-        const response = await fetch('../api/fetch_lms_performance.php?action=get_overview');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP \${response.status}: \${response.statusText}`);
+
+    \$('#ext_metric').html('<option value=\"\">Loading LMS data...</option>');
+    \$.ajax({
+        url: '../api/fetch_lms_performance.php',
+        type: 'GET',
+        data: { action: 'get_overview' },
+        dataType: 'json',
+        success: function(result) {
+            if (result.status === 'success' && result.data) {
+                const apiData = result.data;
+                const currentYear = new Date().getFullYear();
+                const lmsDataRecord = [{
+                    academic_period: currentYear + '-1st',
+                    year: currentYear,
+                    semester: '1st',
+                    metrics: {
+                        avg_grade: parseFloat(apiData.avg_grade) || 0,
+                        submission_rate: parseFloat(apiData.submission_rate) || 0,
+                        quiz_pass_rate: parseFloat(apiData.quiz_pass_rate) || 0,
+                        quiz_attempts: parseInt(apiData.quiz_attempts) || 0,
+                        total_students: parseInt(apiData.total_students) || 0,
+                        total_expected: parseInt(apiData.total_expected) || 0,
+                        total_submitted: parseInt(apiData.total_submitted) || 0,
+                        total_tasks: parseInt(apiData.total_tasks) || 0,
+                        total_quizzes: parseInt(apiData.total_quizzes) || 0,
+                        total_classes: parseInt(apiData.total_classes) || 0,
+                        quiz_passed: parseInt(apiData.quiz_passed) || 0
+                    },
+                    remarks: 'Real-time data from ArtisansLMS'
+                }];
+                
+                externalDataSources.LMS.data = lmsDataRecord;
+                const metricSet = new Set(Object.keys(lmsDataRecord[0].metrics));
+                let options = '<option value=\"\">-- Choose Metric --</option>';
+                metricSet.forEach(metric => {
+                    const displayName = metric.replace(/_/g, ' ').replace(/\\\b\\\w/g, l => l.toUpperCase());
+                    options += '<option value=\"' + metric + '\">' + displayName + '</option>';
+                });
+                \$('#ext_metric').html(options);
+                \$('#ext_data_container').hide();
+                console.log('LMS data loaded successfully');
+            } else {
+                const errorMsg = result.message || 'Invalid response format';
+                \$('#ext_metric').html('<option value=\"\">-- Choose Metric --</option>');
+                alert('Failed to fetch LMS data: ' + errorMsg);
+            }
+        },
+        error: function(error) {
+            console.error('Error fetching LMS data:', error);
+            \$('#ext_metric').html('<option value=\"\">-- Choose Metric --</option>');
+            alert('Error connecting to ArtisansLMS API: ' + error.statusText);
         }
-        
-        const result = await response.json();
-        console.log("LMS API Response:", result);
-        
-        if (result.status === 'success' && result.data) {
-            const apiData = result.data;
-            const currentYear = new Date().getFullYear();
-            const lmsDataRecord = [{
-                academic_period: currentYear + "-1st",
-                year: currentYear,
-                semester: "1st",
-                metrics: {
-                    avg_grade: parseFloat(apiData.avg_grade) || 0,
-                    submission_rate: parseFloat(apiData.submission_rate) || 0,
-                    quiz_pass_rate: parseFloat(apiData.quiz_pass_rate) || 0,
-                    quiz_attempts: parseInt(apiData.quiz_attempts) || 0,
-                    total_students: parseInt(apiData.total_students) || 0,
-                    total_expected: parseInt(apiData.total_expected) || 0,
-                    total_submitted: parseInt(apiData.total_submitted) || 0,
-                    total_tasks: parseInt(apiData.total_tasks) || 0,
-                    total_quizzes: parseInt(apiData.total_quizzes) || 0,
-                    total_classes: parseInt(apiData.total_classes) || 0,
-                    quiz_passed: parseInt(apiData.quiz_passed) || 0
-                },
-                remarks: "Real-time data from ArtisansLMS"
-            }];
-            
-            externalDataSources.LMS.data = lmsDataRecord;
-            
-            const metricSet = new Set(Object.keys(lmsDataRecord[0].metrics));
-            let options = '<option value="">-- Choose Metric --</option>';
-            metricSet.forEach(metric => {
-                const displayName = metric.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                options += `<option value="\${metric}">\${displayName}</option>`;
-            });
-            $("#ext_metric").html(options);
-            $("#ext_data_container").hide();
-            console.log("LMS data loaded successfully");
-        } else {
-            const errorMsg = result.message || "Invalid response format";
-            console.error("LMS API error:", errorMsg);
-            $("#ext_metric").html('<option value="">-- Choose Metric --</option>');
-            alert("Failed to fetch LMS data: " + errorMsg);
-        }
-    } catch (error) {
-        console.error("Error fetching LMS data:", error);
-        $("#ext_metric").html('<option value="">-- Choose Metric --</option>');
-        alert("Error connecting to ArtisansLMS API: " + error.message);
-    }
+    });
 }
 
 function populateExternalValue() {
-    const source = $("#ext_source").val();
-    const metric = $("#ext_metric").val();
-
-    if (!source || !metric) {
-        $("#ext_data_container").hide();
-        return;
-    }
+    const source = \$('#ext_source').val();
+    const metric = \$('#ext_metric').val();
+    if (!source || !metric) { \$('#ext_data_container').hide(); return; }
 
     const sourceData = externalDataSources[source];
     if (!sourceData || !sourceData.data) return;
@@ -734,56 +865,41 @@ function populateExternalValue() {
                 actual_value: value,
                 academic_period: record.academic_period,
                 indicator_id: mapping ? mapping.indicator_id : null,
-                unit: mapping ? mapping.unit : "",
+                unit: mapping ? mapping.unit : '',
                 target_value: mapping ? mapping.target_value : null
             });
         }
     });
 
-    if (matchingRecords.length === 0) {
-        $("#ext_data_container").hide();
-        return;
-    }
-
+    if (matchingRecords.length === 0) { \$('#ext_data_container').hide(); return; }
     window.externalDataRows = matchingRecords;
 
-    let html = "";
+    let html = '';
     matchingRecords.forEach((rec, idx) => {
-        html += '<tr>';
-        html += '<td>' + rec.academic_period + '</td>';
+        html += '<tr><td>' + rec.academic_period + '</td>';
         html += '<td>' + (typeof rec.actual_value === 'number' ? rec.actual_value.toFixed(2) : rec.actual_value) + '</td>';
-        html += '<td><button class="btn-qa btn-qa-sm btn-qa-primary select-external-btn" data-idx="' + idx + '"><i class="bi bi-check"></i> Select</button></td>';
-        html += '</tr>';
+        html += '<td><button class=\"btn-qa btn-qa-sm btn-qa-primary select-external-btn\" data-idx=\"' + idx + '\"><i class=\"bi bi-check\"></i> Select</button></td></tr>';
     });
-
-    $("#ext_data_body").html(html);
-    $("#ext_data_container").show();
+    \$('#ext_data_body').html(html);
+    \$('#ext_data_container').show();
 }
 
 function selectExternalData(index) {
     const data = window.externalDataRows[index];
     if (!data) return;
-
-    $("#ext_year").val(data.year);
-    $("#ext_semester").val(data.semester);
-    $("#ext_actual").val(data.actual_value);
-
-    if (data.indicator_id) {
-        $("#ext_indicator").val(data.indicator_id);
-    } else {
-        $("#ext_indicator").val("");
-    }
-
-    document.getElementById("ext_indicator").scrollIntoView({ behavior: "smooth" });
+    \$('#ext_year').val(data.year);
+    \$('#ext_semester').val(data.semester);
+    \$('#ext_actual').val(data.actual_value);
+    if (data.indicator_id) \$('#ext_indicator').val(data.indicator_id);
+    document.getElementById('ext_indicator').scrollIntoView({ behavior: 'smooth' });
 }
 
-$(document).on('click', '.select-external-btn', function() {
-    const idx = $(this).data('idx');
+\$(document).on('click', '.select-external-btn', function() {
+    const idx = \$(this).data('idx');
     if (idx !== undefined && window.externalDataRows && window.externalDataRows[idx]) {
         selectExternalData(idx);
     }
 });
-</script>
-JS;
+</script>";
 require_once __DIR__ . '/../includes/footer.php';
 ?>
