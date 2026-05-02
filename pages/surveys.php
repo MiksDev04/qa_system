@@ -9,6 +9,7 @@ $per_page = 8;
 $page = max(1, (int)($_GET['page'] ?? 1));
 $status_f = trim($_GET['status'] ?? '');
 $audience_f = trim($_GET['audience'] ?? '');
+$is_partial = isset($_GET['partial']);
 
 $where = ['1=1'];
 $params = [];
@@ -45,6 +46,76 @@ $all = array_merge($params, [$per_page, $offset]);
 $stmt->bind_param($types . 'ii', ...$all);
 $stmt->execute();
 $surveys = $stmt->get_result();
+
+// ── Partial response: return only the inner HTML fragment ──────────────────
+if ($is_partial) {
+    header('Content-Type: application/json');
+    ob_start();
+    if ($surveys->num_rows === 0):
+?>
+<div class="col-12">
+    <div class="qa-card">
+        <div class="empty-state"><i class="bi bi-clipboard-x"></i>
+            <p>No surveys found</p>
+        </div>
+    </div>
+</div>
+<?php
+    else:
+        while ($s = $surveys->fetch_assoc()):
+?>
+<div class="col-md-6 col-xl-4">
+    <div class="qa-card h-100" style="padding:20px">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge-status <?=
+                $s['status'] === 'Active' ? 'badge-active' : ($s['status'] === 'Closed' ? 'badge-closed' : 'badge-draft')
+            ?>"><?= $s['status'] ?></span>
+            <span class="badge-status badge-pending"><?= htmlspecialchars($s['target_audience']) ?></span>
+        </div>
+        <div class="fw-600 mb-1" style="font-size:0.95rem"><?= htmlspecialchars($s['title']) ?></div>
+        <div class="text-muted-qa mb-3" style="font-size:0.8rem">
+            <?= htmlspecialchars(substr($s['description'] ?? '', 0, 90)) ?>
+        </div>
+        <div class="d-flex gap-3 mb-3" style="font-size:0.8rem">
+            <span><i class="bi bi-question-circle me-1 text-accent"></i><?= $s['q_count'] ?> questions</span>
+            <span><i class="bi bi-chat-dots me-1" style="color:var(--success)"></i><?= $s['r_count'] ?> responses</span>
+        </div>
+        <?php if ($s['start_date']): ?>
+            <div class="text-muted-qa" style="font-size:0.76rem;margin-bottom:12px">
+                <i class="bi bi-calendar3 me-1"></i><?= $s['start_date'] ?> – <?= $s['end_date'] ?? '—' ?>
+            </div>
+        <?php endif; ?>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick="viewQuestions(<?= $s['survey_id'] ?>, <?= htmlspecialchars(json_encode($s['title']), ENT_QUOTES) ?>)">
+                <i class="bi bi-list-ul"></i> Questions
+            </button>
+            <button class="btn-qa btn-qa-secondary btn-qa-sm" onclick='editSurvey(<?= json_encode($s) ?>)'>
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn-qa btn-qa-success btn-qa-sm" onclick="showQR(<?= $s['survey_id'] ?>, '<?= htmlspecialchars($s['qr_token']) ?>')">
+                <i class="bi bi-qr-code"></i> QR
+            </button>
+            <button class="btn-qa btn-qa-danger btn-qa-sm" onclick="deleteSurvey(<?= $s['survey_id'] ?>)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+<?php
+        endwhile;
+    endif;
+    $cards_html = ob_get_clean();
+
+    echo json_encode([
+        'cards'       => $cards_html,
+        'total'       => $total,
+        'total_pages' => $total_pages,
+        'page'        => $page,
+        'offset'      => $offset,
+        'per_page'    => $per_page,
+    ]);
+    exit;
+}
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -83,12 +154,12 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
     <div style="display:flex;align-items:flex-end;gap:8px">
         <button class="btn-qa btn-qa-primary" onclick="applyFilters()"><i class="bi bi-funnel"></i> Filter</button>
-        <a href="surveys.php" class="btn-qa btn-qa-secondary"><i class="bi bi-x-circle"></i> Clear</a>
+        <button class="btn-qa btn-qa-secondary" onclick="clearFilters()"><i class="bi bi-x-circle"></i> Clear</button>
     </div>
 </div>
 
 <!-- Survey Cards -->
-<div class="row g-3 mb-3">
+<div class="row g-3 mb-3" id="surveysContainer">
     <?php if ($surveys->num_rows === 0): ?>
         <div class="col-12">
             <div class="qa-card">
@@ -103,8 +174,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="qa-card h-100" style="padding:20px">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <span class="badge-status <?=
-                                                    $s['status'] === 'Active' ? 'badge-active' : ($s['status'] === 'Closed' ? 'badge-closed' : 'badge-draft')
-                                                    ?>"><?= $s['status'] ?></span>
+                            $s['status'] === 'Active' ? 'badge-active' : ($s['status'] === 'Closed' ? 'badge-closed' : 'badge-draft')
+                        ?>"><?= $s['status'] ?></span>
                         <span class="badge-status badge-pending"><?= htmlspecialchars($s['target_audience']) ?></span>
                     </div>
                     <div class="fw-600 mb-1" style="font-size:0.95rem"><?= htmlspecialchars($s['title']) ?></div>
@@ -141,7 +212,7 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <span class="text-muted-qa">Showing <?= min($offset + 1, $total) ?>–<?= min($offset + $per_page, $total) ?> of <?= $total ?> surveys</span>
+    <span class="text-muted-qa" id="surveyCount">Showing <?= min($offset + 1, $total) ?>–<?= min($offset + $per_page, $total) ?> of <?= $total ?> surveys</span>
     <div id="paginationContainer" class="qa-pagination"></div>
 </div>
 
@@ -286,16 +357,57 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php
-$extra_js = '<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+$_status_js   = json_encode($status_f);
+$_audience_js = json_encode($audience_f);
+$extra_js = <<<ENDJS
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
-$(function(){ buildPagination("paginationContainer",' . $page . ',' . $total_pages . ',"goPage"); });
+// ── State ─────────────────────────────────────────────────────────────────
+var currentPage     = {$page};
+var totalPages      = {$total_pages};
+var currentStatus   = {$_status_js};
+var currentAudience = {$_audience_js};
 
-function goPage(p){ const url=new URL(window.location); url.searchParams.set("page",p); window.location=url; }
-function applyFilters(){ const url=new URL(window.location); url.searchParams.set("status",$("#f-status").val()); url.searchParams.set("audience",$("#f-audience").val()); url.searchParams.set("page",1); window.location=url; }
+$(function(){
+    buildPagination("paginationContainer", currentPage, totalPages, "goPage");
+});
 
-let questionCounter = 0;
-let qrExportPngUrl = "";
-let qrExportFileName = "survey-qr.png";
+// ── AJAX loader ──────────────────────────────────────────────────────────
+function loadSurveys(page, status, audience){
+    $.get("surveys.php", {partial:1, page:page, status:status, audience:audience}, function(res){
+        currentPage     = res.page;
+        totalPages      = res.total_pages;
+        currentStatus   = status;
+        currentAudience = audience;
+
+        $("#surveysContainer").html(res.cards);
+
+        var from = res.total === 0 ? 0 : res.offset + 1;
+        var to   = Math.min(res.offset + res.per_page, res.total);
+        $("#surveyCount").text("Showing " + from + "\u2013" + to + " of " + res.total + " surveys");
+
+        buildPagination("paginationContainer", currentPage, totalPages, "goPage");
+    }, "json");
+}
+
+function goPage(p){
+    loadSurveys(p, currentStatus, currentAudience);
+}
+
+function applyFilters(){
+    loadSurveys(1, $("#f-status").val(), $("#f-audience").val());
+}
+
+function clearFilters(){
+    $("#f-status").val("");
+    $("#f-audience").val("");
+    loadSurveys(1, "", "");
+}
+
+// ── Question counter ─────────────────────────────────────────────────────
+var questionCounter = 0;
+var qrExportPngUrl = "";
+var qrExportFileName = "survey-qr.png";
 
 function openAddSurvey(){
     $("#surveyModalTitle").text("New Survey");
@@ -320,151 +432,159 @@ function editSurvey(data){
     $("#sv_end").val(data.end_date);
     $("#sv_require_name").prop("checked", data.require_name ? true : false);
     $("#sv_require_email").prop("checked", data.require_email ? true : false);
-    // Load existing questions
     $("#questionsList").empty();
     $("#noQuestionsMsg").show();
     questionCounter = 0;
-    $.get("/qa_system/api/surveys.php", {action:"get_questions", survey_id: data.survey_id}, function(res){
-        if(res.status==="success" && res.data.length){
+    $.get("/qa_system/api/surveys.php", {action:"get_questions", survey_id:data.survey_id}, function(res){
+        if(res.status === "success" && res.data && res.data.length){
             res.data.forEach(function(q){ addQuestion(q); });
         }
-    });
-    new bootstrap.Modal(document.getElementById("surveyModal")).show();
+        new bootstrap.Modal(document.getElementById("surveyModal")).show();
+    }, "json");
 }
 
 function addQuestion(data){
-    const idx = ++questionCounter;
-    const id = "q_"+idx;
+    var idx = ++questionCounter;
+    var id  = "q_" + idx;
     $("#noQuestionsMsg").hide();
 
-    const typeOpts = ["rating","text","multiple_choice","yes_no"].map(t =>
-        `<option value="${t}" ${data&&data.question_type===t?"selected":""}>${t.replace(/_/g," ")}</option>`
-    ).join("");
+    var typeOpts = ["rating","text","multiple_choice","yes_no"].map(function(t){
+        return "<option value=" + t + " " + (data && data.question_type === t ? "selected" : "") + ">" + t.replace(/_/g," ") + "</option>";
+    }).join("");
 
-    const html = `
-    <div class="qa-card mb-3" id="${id}" style="padding:16px;border-left:4px solid var(--accent)">
-        <input type="hidden" class="q-id" value="${data?data.question_id:""}">
-        <div class="row g-2 align-items-start">
-            <div class="col-md-7">
-                <label class="qa-form-label" style="font-size:0.85rem">Question Text *</label>
-                <input type="text" class="qa-form-control q-text" value="${data?data.question_text.replace(/"/g,"&quot;"):""}" placeholder="Enter your question…">
-            </div>
-            <div class="col-md-2">
-                <label class="qa-form-label" style="font-size:0.85rem">Type</label>
-                <select class="qa-form-control q-type" onchange="toggleChoices(\'${id}\',this.value)">
-                    ${typeOpts}
-                </select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <div class="d-flex gap-2 w-100">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;cursor:pointer;white-space:nowrap">
-                        <input type="checkbox" class="q-required" ${!data||data.is_required?"checked":""} style="cursor:pointer"> Required
-                    </label>
-                    <button class="btn-qa btn-qa-danger btn-qa-icon btn-qa-sm ms-auto" onclick="removeQuestion(\'${id}\')" title="Remove question">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="col-12 q-choices" style="display:${data&&data.question_type==="multiple_choice"?"block":"none"};padding:10px;background:var(--bg-base);border-radius:var(--radius-sm)">
-                <label class="qa-form-label" style="font-size:0.85rem">Choices (comma separated)</label>
-                <input type="text" class="qa-form-control q-choices-input" value="${data&&data.choices?JSON.parse(data.choices).join(", "):""}" placeholder="Option 1, Option 2, Option 3">
-                <div class="text-muted-qa" style="font-size:0.7rem;margin-top:6px">Separate each choice with a comma</div>
-            </div>
-        </div>
-    </div>`;
+    var choicesVal = (data && data.choices) ? JSON.parse(data.choices).join(", ") : "";
+    var questionVal = data ? data.question_text.replace(/"/g, "&quot;") : "";
+    var questionId  = data ? data.question_id : "";
+    var isRequired  = (!data || data.is_required) ? "checked" : "";
+    var choicesDisplay = (data && data.question_type === "multiple_choice") ? "block" : "none";
+
+    var html = [
+        "<div class='qa-card mb-3' id='" + id + "' style='padding:16px;border-left:4px solid var(--accent)'>",
+            "<input type='hidden' class='q-id' value='" + questionId + "'>",
+            "<div class='row g-2 align-items-start'>",
+                "<div class='col-md-7'>",
+                    "<label class='qa-form-label' style='font-size:0.85rem'>Question Text *</label>",
+                    "<input type='text' class='qa-form-control q-text' value=\"" + questionVal + "\" placeholder='Enter your question\u2026'>",
+                "</div>",
+                "<div class='col-md-2'>",
+                    "<label class='qa-form-label' style='font-size:0.85rem'>Type</label>",
+                    "<select class='qa-form-control q-type' onchange=\"toggleChoices('" + id + "',this.value)\">" + typeOpts + "</select>",
+                "</div>",
+                "<div class='col-md-3 d-flex align-items-end'>",
+                    "<div class='d-flex gap-2 w-100'>",
+                        "<label style='display:flex;align-items:center;gap:6px;font-size:0.75rem;cursor:pointer;white-space:nowrap'>",
+                            "<input type='checkbox' class='q-required' " + isRequired + " style='cursor:pointer'> Required",
+                        "</label>",
+                        "<button class='btn-qa btn-qa-danger btn-qa-icon btn-qa-sm ms-auto' onclick=\"removeQuestion('" + id + "')\" title='Remove question'>",
+                            "<i class='bi bi-trash'></i>",
+                        "</button>",
+                    "</div>",
+                "</div>",
+                "<div class='col-12 q-choices' style='display:" + choicesDisplay + ";padding:10px;background:var(--bg-base);border-radius:var(--radius-sm)'>",
+                    "<label class='qa-form-label' style='font-size:0.85rem'>Choices (comma separated)</label>",
+                    "<input type='text' class='qa-form-control q-choices-input' value=\"" + choicesVal + "\" placeholder='Option 1, Option 2, Option 3'>",
+                    "<div class='text-muted-qa' style='font-size:0.7rem;margin-top:6px'>Separate each choice with a comma</div>",
+                "</div>",
+            "</div>",
+        "</div>"
+    ].join("");
+
     $("#questionsList").append(html);
 }
 
 function toggleChoices(id, type){
-    $(`#${id} .q-choices`).toggle(type === "multiple_choice");
+    $("#" + id + " .q-choices").toggle(type === "multiple_choice");
 }
 
 function removeQuestion(id){
-    $(`#${id}`).remove();
+    $("#" + id).remove();
     if($("#questionsList .qa-card").length === 0) $("#noQuestionsMsg").show();
 }
 
 function saveSurvey(){
-    const title = $("#sv_title").val().trim();
+    var title = $("#sv_title").val().trim();
     if(!title){ alert("Survey title is required."); return; }
 
-    const questions = [];
-    let valid = true;
+    var questions = [];
+    var valid = true;
     $("#questionsList .qa-card").each(function(i){
-        const text = $(this).find(".q-text").val().trim();
-        if(!text){ alert("All questions must have text."); valid=false; return false; }
-        const type = $(this).find(".q-type").val();
-        let choices = null;
+        var text = $(this).find(".q-text").val().trim();
+        if(!text){ alert("All questions must have text."); valid = false; return false; }
+        var type = $(this).find(".q-type").val();
+        var choices = null;
         if(type === "multiple_choice"){
-            const raw = $(this).find(".q-choices-input").val().trim();
-            choices = raw ? JSON.stringify(raw.split(",").map(s=>s.trim()).filter(Boolean)) : null;
+            var raw = $(this).find(".q-choices-input").val().trim();
+            choices = raw ? JSON.stringify(raw.split(",").map(function(s){ return s.trim(); }).filter(Boolean)) : null;
         }
         questions.push({
-            question_id: $(this).find(".q-id").val(),
+            question_id:   $(this).find(".q-id").val(),
             question_text: text,
             question_type: type,
-            choices: choices,
-            is_required: $(this).find(".q-required").is(":checked") ? 1 : 0,
-            sort_order: i+1
+            choices:       choices,
+            is_required:   $(this).find(".q-required").is(":checked") ? 1 : 0,
+            sort_order:    i + 1
         });
     });
     if(!valid) return;
 
-    const payload = {
-        action: $("#sv_id").val() ? "update" : "create",
-        survey_id: $("#sv_id").val(),
-        title,
-        description: $("#sv_desc").val(),
+    var payload = {
+        action:          $("#sv_id").val() ? "update" : "create",
+        survey_id:       $("#sv_id").val(),
+        title:           title,
+        description:     $("#sv_desc").val(),
         target_audience: $("#sv_audience").val(),
-        status: $("#sv_status").val(),
-        start_date: $("#sv_start").val(),
-        end_date: $("#sv_end").val(),
-        require_name: $("#sv_require_name").is(":checked") ? 1 : 0,
-        require_email: $("#sv_require_email").is(":checked") ? 1 : 0,
-        questions: JSON.stringify(questions)
+        status:          $("#sv_status").val(),
+        start_date:      $("#sv_start").val(),
+        end_date:        $("#sv_end").val(),
+        require_name:    $("#sv_require_name").is(":checked") ? 1 : 0,
+        require_email:   $("#sv_require_email").is(":checked") ? 1 : 0,
+        questions:       JSON.stringify(questions)
     };
 
-    qaAjax("/qa_system/api/surveys.php", payload, () => { location.reload(); });
+    qaAjax("/qa_system/api/surveys.php", payload, function(){
+        bootstrap.Modal.getInstance(document.getElementById("surveyModal")).hide();
+        loadSurveys(currentPage, currentStatus, currentAudience);
+    });
 }
 
 function viewQuestions(surveyId, title){
     $("#qvTitle").text(title);
-    $("#qvBody").html(`<div class="text-center py-3"><div class="spinner-border spinner-border-sm" style="color:var(--accent)"></div></div>`);
+    $("#qvBody").html("<div class='text-center py-3'><div class='spinner-border spinner-border-sm' style='color:var(--accent)'></div></div>");
     new bootstrap.Modal(document.getElementById("questionsViewModal")).show();
     $.get("/qa_system/api/surveys.php", {action:"get_questions", survey_id:surveyId}, function(res){
-        if(!res.data || !res.data.length){ $("#qvBody").html(`<p class="text-muted-qa text-center">No questions.</p>`); return; }
-        let html = "";
-        res.data.forEach(function(q,i){
-            html += `<div class="mb-3 p-3" style="border:1px solid var(--border);border-radius:var(--radius-sm)">
-                <div class="d-flex justify-content-between">
-                    <span class="fw-600">${i+1}. ${q.question_text}</span>
-                    <span class="badge-status badge-pending small-mono">${q.question_type}</span>
-                </div>
-                ${q.choices ? `<div class="text-muted-qa mt-1" style="font-size:0.8rem">Choices: ${JSON.parse(q.choices).join(" · ")}</div>` : ""}
-                ${q.is_required ? `<span class="badge-status badge-closed mt-1" style="font-size:0.7rem">Required</span>` : ""}
-            </div>`;
+        if(!res.data || !res.data.length){ $("#qvBody").html("<p class='text-muted-qa text-center'>No questions.</p>"); return; }
+        var html = "";
+        res.data.forEach(function(q, i){
+            html += "<div class='mb-3 p-3' style='border:1px solid var(--border);border-radius:var(--radius-sm)'>" +
+                "<div class='d-flex justify-content-between'>" +
+                    "<span class='fw-600'>" + (i+1) + ". " + q.question_text + "</span>" +
+                    "<span class='badge-status badge-pending small-mono'>" + q.question_type + "</span>" +
+                "</div>" +
+                (q.choices ? "<div class='text-muted-qa mt-1' style='font-size:0.8rem'>Choices: " + JSON.parse(q.choices).join(" \u00b7 ") + "</div>" : "") +
+                (q.is_required ? "<span class='badge-status badge-closed mt-1' style='font-size:0.7rem'>Required</span>" : "") +
+            "</div>";
         });
         $("#qvBody").html(html);
     });
 }
 
 function showQR(surveyId, token){
-    const modal = new bootstrap.Modal(document.getElementById("qrModal"));
+    var modal = new bootstrap.Modal(document.getElementById("qrModal"));
     $("#qrModalDesc").text("Share this QR code so respondents can access the survey");
-    $("#qrContainer").html(`<div class="text-muted-qa" style="font-size:0.8rem">Generating QR code...</div>`);
+    $("#qrContainer").html("<div class='text-muted-qa' style='font-size:0.8rem'>Generating QR code...</div>");
     $("#qrUrl").text("");
     $("#btnExportQR").prop("disabled", true);
     qrExportPngUrl = "";
-    qrExportFileName = `survey-${surveyId}-qr.png`;
+    qrExportFileName = "survey-" + surveyId + "-qr.png";
     modal.show();
 
-    const renderQR = function(finalToken){
-        const url = window.location.origin + "/qa_system/survey.php?token=" + finalToken;
+    var renderQR = function(finalToken){
+        var url = window.location.origin + "/qa_system/survey.php?token=" + finalToken;
         $("#qrUrl").text(url);
 
         if(typeof QRCode === "undefined" || !QRCode.toCanvas){
-            const fallbackSrc = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&format=png&data=" + encodeURIComponent(url);
-            $("#qrContainer").html(`<img src="${fallbackSrc}" alt="Survey QR Code" style="width:180px;height:180px;border-radius:4px;display:block;margin:0 auto;">`);
+            var fallbackSrc = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&format=png&data=" + encodeURIComponent(url);
+            $("#qrContainer").html("<img src='" + fallbackSrc + "' alt='Survey QR Code' style='width:180px;height:180px;border-radius:4px;display:block;margin:0 auto;'>");
             qrExportPngUrl = fallbackSrc;
             $("#btnExportQR").prop("disabled", false);
             return;
@@ -472,7 +592,7 @@ function showQR(surveyId, token){
 
         QRCode.toCanvas(document.createElement("canvas"), url, {width:180}, function(err, canvas){
             if(err){
-                $("#qrContainer").html(`<div class="text-danger" style="font-size:0.8rem">Failed to generate QR code.</div>`);
+                $("#qrContainer").html("<div class='text-danger' style='font-size:0.8rem'>Failed to generate QR code.</div>");
                 $("#btnExportQR").prop("disabled", true);
                 return;
             }
@@ -493,31 +613,28 @@ function showQR(surveyId, token){
             renderQR(res.token);
             return;
         }
-        $("#qrContainer").html(`<div class="text-danger" style="font-size:0.8rem">Unable to generate QR token.</div>`);
+        $("#qrContainer").html("<div class='text-danger' style='font-size:0.8rem'>Unable to generate QR token.</div>");
         $("#btnExportQR").prop("disabled", true);
     }, "json").fail(function(){
-        $("#qrContainer").html(`<div class="text-danger" style="font-size:0.8rem">Server error while preparing QR code.</div>`);
+        $("#qrContainer").html("<div class='text-danger' style='font-size:0.8rem'>Server error while preparing QR code.</div>");
         $("#btnExportQR").prop("disabled", true);
     });
 }
 
-function copyQrUrl() {
-    const urlText = $("#qrUrl").text();
-    if(urlText) {
+function copyQrUrl(){
+    var urlText = $("#qrUrl").text();
+    if(urlText){
         navigator.clipboard.writeText(urlText);
-        $("#copyQrUrlBtn").html(`<i class="bi bi-check"></i>`);  // Correct - single quotes outside
-        setTimeout(function() {
-            $("#copyQrUrlBtn").html(`<i class="bi bi-clipboard"></i>`);
+        $("#copyQrUrlBtn").html("<i class='bi bi-check'></i>");
+        setTimeout(function(){
+            $("#copyQrUrlBtn").html("<i class='bi bi-clipboard'></i>");
         }, 1500);
     }
 }
 
 function exportQRPng(){
-    if(!qrExportPngUrl){
-        showToast("QR image is not ready yet.", "error");
-        return;
-    }
-    const link = document.createElement("a");
+    if(!qrExportPngUrl){ showToast("QR image is not ready yet.", "error"); return; }
+    var link = document.createElement("a");
     link.href = qrExportPngUrl;
     link.download = qrExportFileName;
     document.body.appendChild(link);
@@ -526,8 +643,11 @@ function exportQRPng(){
 }
 
 function deleteSurvey(id){
-    confirmDelete("/qa_system/api/surveys.php", {action:"delete", survey_id:id}, () => location.reload());
+    confirmDelete("/qa_system/api/surveys.php", {action:"delete", survey_id:id}, function(){
+        loadSurveys(currentPage, currentStatus, currentAudience);
+    });
 }
-</script>';
+</script>
+ENDJS;
 require_once __DIR__ . '/../includes/footer.php';
 ?>
