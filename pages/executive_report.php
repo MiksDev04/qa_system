@@ -29,7 +29,7 @@ $organization = 'Pamantasan ng Lungsod ng San Pablo';
 
 // Fetch full report data from API
 function fetchReportData($filter_params) {
-    $url = "http://localhost/qa_system/api/executive_report.php?action=full_report&$filter_params";
+    $url = "/qa_system/api/executive_report.php?action=full_report&$filter_params";
     $ch = curl_init();
     curl_setopt_array($ch, [CURLOPT_URL => $url, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15]);
     $resp = curl_exec($ch);
